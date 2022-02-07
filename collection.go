@@ -7,7 +7,7 @@ import "fmt"
 type Collection []*Version
 
 func NewCollection(versions ...string) (Collection, error) {
-	c := make(Collection, len(versions), len(versions))
+	c := make(Collection, len(versions))
 	for i, v := range versions {
 		nv, err := NewVersion(v)
 		if err != nil {

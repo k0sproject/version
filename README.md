@@ -1,6 +1,6 @@
 # version
 
-A go-language package for managing [k0s](https://github.com/k0sproject/k0s) version numbers. It is based on [hashicorp/go-version](https://github.com/hashicorp/go-version) but adds sorting and comparison capabilities for the k0s version numbering scheme.
+A go-language package for managing [k0s](https://github.com/k0sproject/k0s) version numbers. It is based on [hashicorp/go-version](https://github.com/hashicorp/go-version) but adds sorting and comparison capabilities for the k0s version numbering scheme which requires additional sorting by the build tag.
 
 ## Usage
 
