@@ -48,7 +48,7 @@ func (r *Release) String() string {
 	return strings.TrimPrefix(r.TagName, "v")
 }
 
-func latestRelease(preok bool) (Release, error) {
+func LatestReleaseByPrerelease(allowpre bool) (Release, error) {
 	var releases []Release
 	if err := unmarshalURLBody(fmt.Sprintf("https://api.github.com/repos/%s/releases?per_page=20&page=1", Repo), &releases); err != nil {
 		return Release{}, err
@@ -56,7 +56,7 @@ func latestRelease(preok bool) (Release, error) {
 
 	var c Collection
 	for _, v := range releases {
-		if v.PreRelease && !preok {
+		if v.PreRelease && !allowpre {
 			continue
 		}
 		if version, err := NewVersion(v.TagName); err == nil {
@@ -82,12 +82,12 @@ func latestRelease(preok bool) (Release, error) {
 
 // LatestStableRelease returns the semantically sorted latest non-prerelease version from the online repository
 func LatestStableRelease() (Release, error) {
-	return latestRelease(false)
+	return LatestReleaseByPrerelease(false)
 }
 
 // LatestStableRelease returns the semantically sorted latest version even if it is a prerelease from the online repository
 func LatestRelease() (Release, error) {
-	return latestRelease(true)
+	return LatestReleaseByPrerelease(true)
 }
 
 func unmarshalURLBody(url string, o interface{}) error {
