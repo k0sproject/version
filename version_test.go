@@ -10,7 +10,7 @@ func TestNewVersion(t *testing.T) {
 	v, err := NewVersion("1.23.3+k0s.1")
 	assert.NoError(t, err)
 	assert.Equal(t, "1.23.3+k0s.1", v.String())
-	v, err = NewVersion("1.23.b+k0s.1")
+	_, err = NewVersion("1.23.b+k0s.1")
 	assert.Error(t, err)
 }
 
