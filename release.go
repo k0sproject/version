@@ -72,7 +72,7 @@ func LatestReleaseByPrerelease(allowpre bool) (Release, error) {
 	latest := c[len(c)-1].String()
 
 	for _, v := range releases {
-		if v.TagName == latest {
+		if strings.TrimPrefix(v.TagName, "v") == latest {
 			return v, nil
 		}
 	}
