@@ -22,6 +22,9 @@ func (v *Version) Equal(b *Version) bool {
 
 // GreaterThan returns true if the version is greater than the supplied version
 func (v *Version) GreaterThan(b *Version) bool {
+	if v.String() == b.String() {
+		return false
+	}
 	p := pair(v, b)
 	sort.Sort(p)
 	return v.String() == p[1].String()
@@ -29,6 +32,9 @@ func (v *Version) GreaterThan(b *Version) bool {
 
 // LessThan returns true if the version is lower than the supplied version
 func (v *Version) LessThan(b *Version) bool {
+	if v.String() == b.String() {
+		return false
+	}
 	return !v.GreaterThan(b)
 }
 

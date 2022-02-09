@@ -30,6 +30,8 @@ func TestK0sComparison(t *testing.T) {
 	b, err := NewVersion("1.23.1+k0s.2")
 	assert.NoError(t, err)
 	assert.True(t, b.GreaterThan(a), "version %s should be greater than %s", b, a)
+	assert.False(t, a.GreaterThan(a), "version %s should not be greater than %s", a, a)
 	assert.True(t, a.LessThan(b), "version %s should be less than %s", b, a)
+	assert.False(t, a.LessThan(a), "version %s should not be less than %s", a, a)
 	assert.False(t, b.Equal(a), "version %s should not be equal to %s", b, a)
 }
