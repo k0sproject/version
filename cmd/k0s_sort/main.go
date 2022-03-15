@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 
 	"github.com/k0sproject/version"
 )
@@ -30,6 +31,6 @@ func main() {
 	sort.Sort(versions)
 
 	for _, v := range versions {
-		fmt.Println(v)
+		fmt.Println(fmt.Sprintf("v%s", strings.TrimPrefix(v.String(), "v")))
 	}
 }
