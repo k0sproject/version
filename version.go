@@ -1,10 +1,15 @@
 package version
 
 import (
+	"fmt"
+	"path/filepath"
 	"sort"
+	"strings"
 
 	goversion "github.com/hashicorp/go-version"
 )
+
+var BaseUrl = "https://github.com/k0sproject/k0s/"
 
 // Version is a k0s version
 type Version struct {
@@ -13,6 +18,43 @@ type Version struct {
 
 func pair(a, b *Version) Collection {
 	return Collection{a, b}
+}
+
+// String returns a v-prefixed string representation of the k0s version
+func (v *Version) String() string {
+	return fmt.Sprintf("v%s", v.Version.String())
+}
+
+func (v *Version) urlString() string {
+	return strings.ReplaceAll(v.String(), "+", "%2B")
+}
+
+// URL returns an URL to the release information page for the k0s version
+func (v *Version) URL() string {
+	return BaseUrl + filepath.Join("releases", "tag", v.urlString())
+}
+
+func (v *Version) assetBaseURL() string {
+	return BaseUrl + filepath.Join("releases", "download", v.urlString()) + "/"
+}
+
+// DownloadURL returns the k0s binary download URL for the k0s version
+func (v *Version) DownloadURL(os, arch string) string {
+	var ext string
+	if strings.HasPrefix(strings.ToLower(os), "win") {
+		ext = ".exe"
+	}
+	return v.assetBaseURL() + fmt.Sprintf("k0s-%s-%s%s", v.String(), arch, ext)
+}
+
+// AirgapDownloadURL returns the k0s airgap bundle download URL for the k0s version
+func (v *Version) AirgapDownloadURL(arch string) string {
+	return v.assetBaseURL() + fmt.Sprintf("k0s-airgap-bundle-%s-%s", v.String(), arch)
+}
+
+// DocsURL returns the documentation URL for the k0s version
+func (v *Version) DocsURL() string {
+	return fmt.Sprintf("https://docs.k0sproject.io/%s/", v.String())
 }
 
 // Equal returns true if the version is equal to the supplied version
@@ -70,7 +112,7 @@ func (v *Version) Compare(b *Version) int {
 
 // NewVersion returns a new Version created from the supplied string or an error if the string is not a valid version number
 func NewVersion(v string) (*Version, error) {
-	n, err := goversion.NewVersion(v)
+	n, err := goversion.NewVersion(strings.TrimPrefix(v, "v"))
 	if err != nil {
 		return nil, err
 	}

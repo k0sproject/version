@@ -38,7 +38,7 @@ import (
 )
 
 func main() {
-  latest, err := version.LatestStableRelease()
+  latest, err := version.Latest()
   if err != nil {
     panic(err)
   }
