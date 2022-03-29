@@ -119,3 +119,13 @@ func NewVersion(v string) (*Version, error) {
 
 	return &Version{Version: *n}, nil
 }
+
+// MustParse is like NewVersion but panics if the version cannot be parsed.
+// It simplifies safe initialization of global variables.
+func MustParse(v string) *Version {
+	version, err := NewVersion(v)
+	if err != nil {
+		panic("github.com/k0sproject/version: NewVersion: " + err.Error())
+	}
+	return version
+}
