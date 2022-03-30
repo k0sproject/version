@@ -8,16 +8,16 @@ A go-language package for managing [k0s](https://github.com/k0sproject/k0s) vers
 
 ```go
 import (
-  "fmt"
-  "github.com/k0sproject/version"
+	"fmt"
+	"github.com/k0sproject/version"
 )
 
 func main() {
-  a := version.NewVersion("1.23.3+k0s.1")
-  b := version.NewVersion("1.23.3+k0s.2")
-  fmt.Println("a is greater than b: %t", a.GreaterThan(b))
-  fmt.Println("a is less than b: %t", a.LessThan(b))
-  fmt.Println("a is equal to b: %t", a.Equal(b))
+	a := version.MustParse("1.23.3+k0s.1")
+	b := version.MustParse("1.23.3+k0s.2")
+	fmt.Printf("a is greater than b: %t\n", a.GreaterThan(b))
+	fmt.Printf("a is less than b: %t\n", a.LessThan(b))
+	fmt.Printf("a is equal to b: %t\n", a.Equal(b))
 }
 ```
 
@@ -33,15 +33,15 @@ a is equal to b: false
 
 ```go
 import (
-  "fmt"
-  "github.com/k0sproject/version"
+	"fmt"
+	"github.com/k0sproject/version"
 )
 
 func main() {
-  latest, err := version.Latest()
-  if err != nil {
-    panic(err)
-  }
-  fmt.Println("Latest k0s version is: %s", latest)
+	latest, err := version.Latest()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Latest k0s version is: %s\n", latest)
 }
 ```
