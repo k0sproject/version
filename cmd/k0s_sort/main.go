@@ -31,6 +31,6 @@ func main() {
 	sort.Sort(versions)
 
 	for _, v := range versions {
-		fmt.Println(fmt.Sprintf("v%s", strings.TrimPrefix(v.String(), "v")))
+		fmt.Printf("v%s\n", strings.TrimPrefix(v.String(), "v"))
 	}
 }
