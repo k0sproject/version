@@ -147,6 +147,11 @@ func (v *Version) UnmarshalJSON(b []byte) error {
 	})
 }
 
+// Satisfies returns true if the version satisfies the supplied constraint
+func (v *Version) Satisfies(constraint Constraints) bool {
+	return constraint.Check(v)
+}
+
 // NewVersion returns a new Version created from the supplied string or an error if the string is not a valid version number
 func NewVersion(v string) (*Version, error) {
 	n, err := goversion.NewVersion(strings.TrimPrefix(v, "v"))
