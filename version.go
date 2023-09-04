@@ -123,11 +123,11 @@ func (v *Version) MarshalYAML() (interface{}, error) {
 func (v *Version) unmarshal(f func(interface{}) error) error {
 	var s string
 	if err := f(&s); err != nil {
-		return fmt.Errorf("unmarshal failed to decode input: %w", err)
+		return fmt.Errorf("failed to decode input: %w", err)
 	}
 	newV, err := NewVersion(s)
 	if err != nil {
-		return fmt.Errorf("failed to unmarshal '%s': %w", s, err)
+		return fmt.Errorf("failed to unmarshal version: %w", err)
 	}
 	*v = *newV
 	return nil

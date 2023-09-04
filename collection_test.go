@@ -73,3 +73,22 @@ func TestCollectionUnmarshalling(t *testing.T) {
 		assert.Equal(t, "v1.0.1+k0s.1", c[1].String())
 	})
 }
+
+func TestFailingCollectionUnmarshalling(t *testing.T) {
+	t.Run("JSON", func(t *testing.T) {
+		var c Collection
+		err := json.Unmarshal([]byte(`invalid_json`), &c)
+		assert.Error(t, err)
+		err = json.Unmarshal([]byte(`["invalid_version"]`), &c)
+		assert.Error(t, err)
+	})
+
+	t.Run("YAML", func(t *testing.T) {
+		var c Collection
+		err := c.UnmarshalYAML(func(i interface{}) error {
+			*(i.(*[]string)) = []string{"invalid\n"}
+			return nil
+		})
+		assert.Error(t, err)
+	})
+}

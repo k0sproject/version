@@ -2,6 +2,7 @@ package version
 
 import (
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -79,5 +80,28 @@ func TestUnmarshalling(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, "v1.0.0+k0s.1", v.String())
+	})
+}
+
+func TestFailingUnmarshalling(t *testing.T) {
+	t.Run("JSON", func(t *testing.T) {
+		var v Version
+		err := json.Unmarshal([]byte(`invalid_json`), &v)
+		assert.Error(t, err)
+		err = json.Unmarshal([]byte(`"invalid_version"`), &v)
+		assert.Error(t, err)
+	})
+
+	t.Run("YAML", func(t *testing.T) {
+		var v = &Version{}
+		err := v.UnmarshalYAML(func(i interface{}) error {
+			return errors.New("forced error")
+		})
+		assert.Error(t, err)
+		err = v.UnmarshalYAML(func(i interface{}) error {
+			*(i.(*string)) = "invalid_version"
+			return nil
+		})
+		assert.Error(t, err)
 	})
 }

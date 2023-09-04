@@ -71,7 +71,7 @@ func (c *Collection) MarshalJSON() ([]byte, error) {
 func (c *Collection) UnmarshalJSON(data []byte) error {
 	var strSlice []string
 	if err := json.Unmarshal(data, &strSlice); err != nil {
-		return err
+		return fmt.Errorf("failed to decode JSON input: %w", err)
 	}
 	return c.unmarshal(strSlice)
 }
@@ -85,7 +85,7 @@ func (c *Collection) MarshalYAML() (interface{}, error) {
 func (c *Collection) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var strSlice []string
 	if err := unmarshal(&strSlice); err != nil {
-		return err
+		return fmt.Errorf("failed to decode YAML input: %w", err)
 	}
 	return c.unmarshal(strSlice)
 }
