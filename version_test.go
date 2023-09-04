@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/yaml.v2"
 )
 
 func TestNewVersion(t *testing.T) {
@@ -58,9 +57,9 @@ func TestMarshalling(t *testing.T) {
 	})
 
 	t.Run("YAML", func(t *testing.T) {
-		yamlData, err := yaml.Marshal(v)
+		yamlData, err := v.MarshalYAML()
 		assert.NoError(t, err)
-		assert.Equal(t, "v1.0.0+k0s.0\n", string(yamlData))
+		assert.Equal(t, "v1.0.0+k0s.0", yamlData)
 	})
 }
 
@@ -73,8 +72,11 @@ func TestUnmarshalling(t *testing.T) {
 	})
 
 	t.Run("YAML", func(t *testing.T) {
-		var v Version
-		err := yaml.Unmarshal([]byte("v1.0.0+k0s.1\n"), &v)
+		v := &Version{}
+		err := v.UnmarshalYAML(func(i interface{}) error {
+			*(i.(*string)) = "v1.0.0+k0s.1"
+			return nil
+		})
 		assert.NoError(t, err)
 		assert.Equal(t, "v1.0.0+k0s.1", v.String())
 	})
