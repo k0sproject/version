@@ -110,6 +110,43 @@ func (v *Version) Compare(b *Version) int {
 	return 1
 }
 
+// MarshalJSON implements the json.Marshaler interface.
+func (v *Version) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf("\"%s\"", v.String())), nil
+}
+
+// MarshalYAML implements the yaml.Marshaler interface.
+func (v *Version) MarshalYAML() (interface{}, error) {
+	return v.String(), nil
+}
+
+func (v *Version) unmarshal(f func(interface{}) error) error {
+	var s string
+	if err := f(&s); err != nil {
+		return fmt.Errorf("unmarshal failed to decode input: %w", err)
+	}
+	newV, err := NewVersion(s)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal '%s': %w", s, err)
+	}
+	*v = *newV
+	return nil
+}
+
+// UnmarshalYAML implements the yaml.Unmarshaler interface.
+func (v *Version) UnmarshalYAML(f func(interface{}) error) error {
+	return v.unmarshal(f)
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+func (v *Version) UnmarshalJSON(b []byte) error {
+	s := strings.TrimSpace(strings.Trim(string(b), "\""))
+	return v.unmarshal(func(i interface{}) error {
+		*(i.(*string)) = s
+		return nil
+	})
+}
+
 // NewVersion returns a new Version created from the supplied string or an error if the string is not a valid version number
 func NewVersion(v string) (*Version, error) {
 	n, err := goversion.NewVersion(strings.TrimPrefix(v, "v"))
