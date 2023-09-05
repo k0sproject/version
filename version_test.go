@@ -38,6 +38,20 @@ func TestK0sComparison(t *testing.T) {
 	assert.False(t, b.Equal(a), "version %s should not be equal to %s", b, a)
 }
 
+func TestSatisfies(t *testing.T) {
+	v, err := NewVersion("1.23.1+k0s.1")
+	assert.NoError(t, err)
+	assert.True(t, v.Satisfies(MustConstraint(">=1.23.1")))
+	assert.True(t, v.Satisfies(MustConstraint(">=1.23.1+k0s.0")))
+	assert.True(t, v.Satisfies(MustConstraint(">=1.23.1+k0s.1")))
+	assert.True(t, v.Satisfies(MustConstraint("=1.23.1+k0s.1")))
+	assert.True(t, v.Satisfies(MustConstraint("<1.23.1+k0s.2")))
+	assert.False(t, v.Satisfies(MustConstraint(">=1.23.1+k0s.2")))
+	assert.False(t, v.Satisfies(MustConstraint(">=1.23.2")))
+	assert.False(t, v.Satisfies(MustConstraint(">1.23.1+k0s.1")))
+	assert.False(t, v.Satisfies(MustConstraint("<1.23.1+k0s.1")))
+}
+
 func TestURLs(t *testing.T) {
 	a, err := NewVersion("1.23.3+k0s.1")
 	assert.NoError(t, err)
