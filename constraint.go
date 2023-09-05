@@ -47,6 +47,15 @@ func MustConstraint(cs string) Constraints {
 	return c
 }
 
+// String returns the constraint as a string.
+func (cs Constraints) String() string {
+	s := make([]string, len(cs))
+	for i, c := range cs {
+		s[i] = c.String()
+	}
+	return strings.Join(s, ", ")
+}
+
 // Check returns true if the given version satisfies all of the constraints.
 func (cs Constraints) Check(v *Version) bool {
 	for _, c := range cs {

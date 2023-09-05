@@ -151,3 +151,11 @@ func TestCheckString(t *testing.T) {
 	assert.False(t, c.CheckString("0.9.9"))
 	assert.False(t, c.CheckString("x"))
 }
+
+func TestString(t *testing.T) {
+	c, err := NewConstraint(">= 1.0.0, < 2.0.0")
+	assert.NoError(t, err)
+
+	assert.Equal(t, ">= 1.0.0, < 2.0.0", c.String())
+}
+
