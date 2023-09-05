@@ -22,7 +22,14 @@ func pair(a, b *Version) Collection {
 
 // String returns a v-prefixed string representation of the k0s version
 func (v *Version) String() string {
-	return fmt.Sprintf("v%s", v.Version.String())
+	if v == nil {
+		return ""
+	}
+	plain := strings.TrimPrefix(v.Version.String(), "v")
+	if plain == "" {
+		return ""
+	}
+	return fmt.Sprintf("v%s", plain)
 }
 
 func (v *Version) urlString() string {
@@ -112,11 +119,19 @@ func (v *Version) Compare(b *Version) int {
 
 // MarshalJSON implements the json.Marshaler interface.
 func (v *Version) MarshalJSON() ([]byte, error) {
+	if v == nil {
+		return []byte("null"), nil
+	}
+
 	return []byte(fmt.Sprintf("\"%s\"", v.String())), nil
 }
 
 // MarshalYAML implements the yaml.Marshaler interface.
 func (v *Version) MarshalYAML() (interface{}, error) {
+	if v == nil {
+		return nil, nil
+	}
+
 	return v.String(), nil
 }
 
@@ -124,6 +139,9 @@ func (v *Version) unmarshal(f func(interface{}) error) error {
 	var s string
 	if err := f(&s); err != nil {
 		return fmt.Errorf("failed to decode input: %w", err)
+	}
+	if s == "" {
+		return nil
 	}
 	newV, err := NewVersion(s)
 	if err != nil {
@@ -141,10 +159,19 @@ func (v *Version) UnmarshalYAML(f func(interface{}) error) error {
 // UnmarshalJSON implements the json.Unmarshaler interface.
 func (v *Version) UnmarshalJSON(b []byte) error {
 	s := strings.TrimSpace(strings.Trim(string(b), "\""))
+	if s == "" || s == "null" {
+		// go doesn't allow to set nil to a non-pointer struct field, so the result
+		// is going to be an empty struct
+		return nil
+	}
 	return v.unmarshal(func(i interface{}) error {
 		*(i.(*string)) = s
 		return nil
 	})
+}
+
+func (v *Version) IsZero() bool {
+	return v == nil || v.String() == ""
 }
 
 // Satisfies returns true if the version satisfies the supplied constraint
