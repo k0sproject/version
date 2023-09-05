@@ -76,12 +76,25 @@ func TestMarshalling(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "v1.0.0+k0s.0", yamlData)
 	})
+
+	t.Run("JSON with nil", func(t *testing.T) {
+		jsonData, err := json.Marshal(nil)
+		assert.NoError(t, err)
+		assert.Equal(t, `null`, string(jsonData))
+	})
+
+	t.Run("YAML", func(t *testing.T) {
+		var nilVersion *Version
+		yamlData, err := nilVersion.MarshalYAML()
+		assert.NoError(t, err)
+		assert.Nil(t, yamlData)
+	})
 }
 
 func TestUnmarshalling(t *testing.T) {
 	t.Run("JSON", func(t *testing.T) {
-		var v Version
-		err := json.Unmarshal([]byte(`"v1.0.0+k0s.1"`), &v)
+		v := &Version{}
+		err := json.Unmarshal([]byte(`"v1.0.0+k0s.1"`), v)
 		assert.NoError(t, err)
 		assert.Equal(t, "v1.0.0+k0s.1", v.String())
 	})
@@ -94,6 +107,23 @@ func TestUnmarshalling(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, "v1.0.0+k0s.1", v.String())
+	})
+
+	t.Run("JSON with null", func(t *testing.T) {
+		v := &Version{}
+		err := json.Unmarshal([]byte(`null`), v)
+		assert.NoError(t, err)
+		assert.True(t, v.IsZero())
+	})
+
+	t.Run("YAML with empty", func(t *testing.T) {
+		v := &Version{}
+		err := v.UnmarshalYAML(func(i interface{}) error {
+			*(i.(*string)) = ""
+			return nil
+		})
+		assert.NoError(t, err)
+		assert.Nil(t, nil, v)
 	})
 }
 
