@@ -1,10 +1,13 @@
 package version
 
 import (
+	"bytes"
 	"fmt"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
+	"sync"
 
 	goversion "github.com/hashicorp/go-version"
 )
@@ -14,6 +17,8 @@ var BaseUrl = "https://github.com/k0sproject/k0s/"
 // Version is a k0s version
 type Version struct {
 	goversion.Version
+	buf *bytes.Buffer
+	mu  *sync.Mutex
 }
 
 func pair(a, b *Version) Collection {
@@ -25,11 +30,43 @@ func (v *Version) String() string {
 	if v == nil {
 		return ""
 	}
-	plain := strings.TrimPrefix(v.Version.String(), "v")
-	if plain == "" {
+
+	v.mu.Lock()
+	defer v.mu.Unlock()
+
+	if v.buf != nil {
+		return v.buf.String()
+	}
+
+	v.buf = &bytes.Buffer{}
+
+	segments := v.Segments()
+	if len(segments) == 0 {
 		return ""
 	}
-	return fmt.Sprintf("v%s", plain)
+
+	v.buf.WriteRune('v')
+
+	for i, s := range segments {
+		fmt.Fprint(v.buf, strconv.Itoa(s))
+		if i < len(segments)-1 {
+			v.buf.WriteRune('.')
+		}
+	}
+
+	pre := v.Prerelease()
+	if pre != "" {
+		v.buf.WriteRune('-')
+		fmt.Fprint(v.buf, pre)
+	}
+
+	meta := v.Metadata()
+	if meta != "" {
+		v.buf.WriteRune('+')
+		fmt.Fprint(v.buf, meta)
+	}
+
+	return v.buf.String()
 }
 
 func (v *Version) urlString() string {
@@ -148,6 +185,7 @@ func (v *Version) unmarshal(f func(interface{}) error) error {
 		return fmt.Errorf("failed to unmarshal version: %w", err)
 	}
 	*v = *newV
+	v.mu = new(sync.Mutex)
 	return nil
 }
 
@@ -171,7 +209,7 @@ func (v *Version) UnmarshalJSON(b []byte) error {
 }
 
 func (v *Version) IsZero() bool {
-	return v == nil || v.String() == ""
+	return v == nil || len(v.Segments()) == 0
 }
 
 // Satisfies returns true if the version satisfies the supplied constraint
@@ -186,7 +224,7 @@ func NewVersion(v string) (*Version, error) {
 		return nil, err
 	}
 
-	return &Version{Version: *n}, nil
+	return &Version{Version: *n, mu: new(sync.Mutex)}, nil
 }
 
 // MustParse is like NewVersion but panics if the version cannot be parsed.
