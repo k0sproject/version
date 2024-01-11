@@ -8,6 +8,7 @@ k0s_sort: $(GO_SRCS)
 	CGO_ENABLED=0 go build $(BUILD_FLAGS) -o $@ ./cmd/k0s_sort
 
 PLATFORMS := linux-amd64 linux-arm64 linux-arm darwin-amd64 darwin-arm64 windows-amd64
+BIN_PREFIX := k0s_sort-
 bins := $(foreach platform, $(PLATFORMS), bin/$(BIN_PREFIX)$(platform))
 $(bins):
 	$(eval temp := $(subst -, ,$(subst $(BIN_PREFIX),,$(notdir $@))))
