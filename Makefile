@@ -18,7 +18,7 @@ $(bins):
 bin/sha256sums.txt: $(bins)
 	sha256sum -b $(bins) | sed 's|bin/||' > $@
 
-build-all: $(bins) bin/sha256sums.md
+build-all: $(bins) bin/sha256sums.txt
 
 .PHONY: install
 install: k0s_sort
