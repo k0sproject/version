@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+jobs:
+  release:
+    name: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
+    
+      - name: Tag name
+        id: tag-name
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          check-latest: true
+
+      - name: Build binaries
+        id: build_bins
+        env:
+          TAG_NAME: ${{ steps.tag-name.outputs.tag }}
+        run: make build-all
+
+      - name: Create release and upload binaries
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            bin/k0s_sort-*
+            bin/checksums.txt
+          tag_name: ${{ steps.tag-name.outputs.tag }}
+          name: ${{ steps.tag-name.outputs.tag }}
+          generate_release_notes: true
+          prerelease: ${{ contains(steps.tag-name.outputs.tag, '-') }} # v0.1.2-beta1, 1.2.3-rc1
+
