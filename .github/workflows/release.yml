@@ -34,7 +34,7 @@ jobs:
         with:
           files: |
             bin/k0s_sort-*
-            bin/checksums.txt
+            bin/sha256sums.txt
           tag_name: ${{ steps.tag-name.outputs.tag }}
           name: ${{ steps.tag-name.outputs.tag }}
           generate_release_notes: true
