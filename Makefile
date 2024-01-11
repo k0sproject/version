@@ -14,7 +14,8 @@ $(bins):
 	$(eval temp := $(subst -, ,$(subst $(BIN_PREFIX),,$(notdir $@))))
 	$(eval OS := $(word 1, $(subst -, ,$(temp))))
 	$(eval ARCH := $(word 2, $(subst -, ,$(temp))))
-	GOOS=$(OS) GOARCH=$(ARCH) CGO_ENABLED=0 go build $(BUILD_FLAGS) -o $@ ./cmd/k0s_sort
+	$(eval EXT := $(if $(filter $(OS),windows),.exe,))
+	GOOS=$(OS) GOARCH=$(ARCH) CGO_ENABLED=0 go build $(BUILD_FLAGS) -o $@$(EXT) ./cmd/k0s_sort
 
 bin/sha256sums.txt: $(bins)
 	sha256sum -b $(bins) | sed 's|bin/||' > $@
