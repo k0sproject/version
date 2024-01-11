@@ -45,3 +45,15 @@ func main() {
 	fmt.Printf("Latest k0s version is: %s\n", latest)
 }
 ```
+
+### `k0s_sort` executable
+
+A command-line interface to the package. Can be used to sort lists of versions or to obtain the latest version number.
+
+```console
+Usage: k0s_sort [options] [filename ...]
+  -l	only print the latest version
+  -o	print the latest version from online
+  -s	omit prerelease versions
+  -v	print k0s_sort version
+```

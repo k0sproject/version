@@ -1,41 +1,25 @@
 name: Go
 
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
 
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Set up Go
-      uses: actions/setup-go@v2
-      if: github.ref != 'refs/heads/main'
+      uses: actions/setup-go@v5
       with:
-        go-version: 1.17
-
-    - name: Go modules cache
-      uses: actions/cache@v2
-      if: github.ref != 'refs/heads/main'
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
+        go-version-file: go.mod
 
     - name: Run golangci-lint
-      if: github.ref != 'refs/heads/main'
-      uses: golangci/golangci-lint-action@v2.5.0
-      with:
-        version: v1.44.0
-        skip-go-installation: true
+      uses: golangci/golangci-lint-action@v3
 
     - name: Build
-      if: github.ref != 'refs/heads/main'
-      run: go build -v ./...
+      run: make k0s_sort
 
     - name: Test
-      if: github.ref != 'refs/heads/main'
-      run: go test -v ./...
+      run: make test
 
