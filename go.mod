@@ -3,7 +3,7 @@ module github.com/k0sproject/version
 go 1.17
 
 require (
-	github.com/hashicorp/go-version v1.4.0
+	github.com/hashicorp/go-version v1.6.0
 	github.com/stretchr/testify v1.7.0
 )
 
