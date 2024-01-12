@@ -9,8 +9,6 @@ import (
 	"strings"
 )
 
-var ErrInvalidVersion = errors.New("invalid version")
-
 const (
 	BaseUrl     = "https://github.com/k0sproject/k0s/"
 	k0s         = "k0s"
@@ -39,12 +37,12 @@ func NewVersion(v string) (*Version, error) {
 		v = v[1:]
 	}
 	if v == "" {
-		return nil, ErrInvalidVersion
+		return nil, errors.New("empty version")
 	}
 	for _, c := range v {
 		if (c < 'a' || c > 'z') && (c < '0' || c > '9') && c != '+' && c != '-' && c != '.' {
 			// version can only contain a-z, 0-9, +, -, .
-			return nil, fmt.Errorf("%w: can't contain character %c", ErrInvalidVersion, c)
+			return nil, fmt.Errorf("can't contain character %c", c)
 		}
 	}
 	idx := strings.IndexAny(v, "-+")
@@ -55,14 +53,14 @@ func NewVersion(v string) (*Version, error) {
 	}
 	segments := strings.Split(v, ".")
 	if len(segments) > maxSegments {
-		return nil, fmt.Errorf("%w: too many segments (%d > %d", ErrInvalidVersion, len(segments), maxSegments)
+		return nil, fmt.Errorf("too many segments (%d > %d", len(segments), maxSegments)
 	}
 
 	version := &Version{comparableFields: comparableFields{numSegments: len(segments)}}
 	for idx, s := range segments {
 		segment, err := strconv.ParseUint(s, 10, 32)
 		if err != nil {
-			return nil, fmt.Errorf("%w: parsing segment '%s': %w", ErrInvalidVersion, s, err)
+			return nil, fmt.Errorf("parsing segment '%s': %w", s, err)
 		}
 		version.segments[idx] = int(segment)
 	}
