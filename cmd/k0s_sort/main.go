@@ -93,15 +93,11 @@ func main() {
 
 	sort.Sort(versions)
 
-	if len(versions) == 0 {
-		println("no versions found")
-		os.Exit(1)
-	}
-
-	if latestFlag {
+	if latestFlag && len(versions) > 0 {
 		fmt.Printf("v%s\n", strings.TrimPrefix(versions[len(versions)-1].String(), "v"))
 		return
 	}
+
 	for _, v := range versions {
 		fmt.Printf("v%s\n", strings.TrimPrefix(v.String(), "v"))
 	}
