@@ -266,7 +266,7 @@ func (v *Version) Compare(b *Version) int {
 	if v.k0s > b.k0s {
 		return 1
 	}
-	if b.k0s > v.k0s {
+	if v.k0s < b.k0s {
 		return -1
 	}
 	// meta should not affect precedence
