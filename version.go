@@ -15,7 +15,9 @@ const (
 	maxSegments = 3
 )
 
+// this contains the fields that can be compared using go's equality operator
 type comparableFields struct {
+	// arrays (not slices) of basic types are comparable in go
 	segments    [maxSegments]int
 	numSegments int
 
