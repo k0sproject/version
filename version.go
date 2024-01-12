@@ -1,3 +1,4 @@
+// package version implements a k0s version type and functions to parse and compare versions
 package version
 
 import (
@@ -32,6 +33,7 @@ type Version struct {
 	s string
 }
 
+// NewVersion returns a new Version object from a string representation of a k0s version
 func NewVersion(v string) (*Version, error) {
 	if len(v) > 0 && v[0] == 'v' {
 		v = v[1:]
@@ -118,30 +120,37 @@ func NewVersion(v string) (*Version, error) {
 	return version, nil
 }
 
+// Segments returns the numerical segments of the k0s version (eg 1.2.3 from v1.2.3).
 func (v *Version) Segments() []int {
 	return v.segments[:v.numSegments]
 }
 
+// Prerelease returns the prerelease part of the k0s version (eg rc1 from v1.2.3-rc1).
 func (v *Version) Prerelease() string {
 	return v.pre
 }
 
+// IsK0s returns true if the version is a k0s version
 func (v *Version) IsK0s() bool {
 	return v.isK0s
 }
 
+// K0sVersion returns the k0s version (eg 4 from v1.2.3-k0s.4)
 func (v *Version) K0sVersion() int {
 	return v.k0s
 }
 
+// Metadata returns the metadata part of the k0s version (eg 123abc from v1.2.3+k0s.1.123abc)
 func (v *Version) Metadata() string {
 	return v.meta
 }
 
+// ComparableFields returns the comparable fields of the k0s version
 func (v *Version) ComparableFields() comparableFields {
 	return v.comparableFields
 }
 
+// Segments64 returns the numerical segments of the k0s version as int64 (eg 1.2.3 from v1.2.3).
 func (v *Version) Segments64() []int64 {
 	segments := make([]int64, v.numSegments)
 	for i := 0; i < v.numSegments; i++ {
@@ -150,6 +159,7 @@ func (v *Version) Segments64() []int64 {
 	return segments
 }
 
+// IsPrerelease returns true if the k0s version is a prerelease version
 func (v *Version) IsPrerelease() bool {
 	return v.pre != ""
 }
@@ -197,18 +207,23 @@ func (v *Version) String() string {
 	return v.s
 }
 
+// Equal returns true if the k0s version is equal to the supplied version
 func (v *Version) Equal(b *Version) bool {
 	if v == nil || b == nil {
+		// nil versions are not equal
 		return false
 	}
 
 	if v.s != "" && b.s != "" {
+		// compare strings if both versions are already stringified
 		return v.s == b.s
 	}
 
+	// compare comparable fields using go's equality operator
 	return v.comparableFields == b.comparableFields
 }
 
+// Compare returns 0 if the k0s version is equal to the supplied version, 1 if it's greater and -1 if it's lower
 func (v *Version) Compare(b *Version) int {
 	if v.Equal(b) {
 		return 0
@@ -312,10 +327,12 @@ func (v *Version) LessThanOrEqual(b *Version) bool {
 	return v.Compare(b) <= 0
 }
 
+// MarshalText implements the encoding.TextMarshaler interface (used as fallback by encoding/json and yaml.v3).
 func (v *Version) MarshalText() ([]byte, error) {
 	return []byte(v.String()), nil
 }
 
+// UnmarshalText implements the encoding.TextUnmarshaler interface (used as fallback by encoding/json and yaml.v3).
 func (v *Version) UnmarshalText(text []byte) error {
 	if len(text) == 0 {
 		*v = Version{}
@@ -330,6 +347,7 @@ func (v *Version) UnmarshalText(text []byte) error {
 	return nil
 }
 
+// MarshalYAML implements the yaml.v2 Marshaler interface.
 func (v *Version) MarshalYAML() (interface{}, error) {
 	if v == nil || v.numSegments == 0 {
 		return nil, nil
@@ -337,6 +355,7 @@ func (v *Version) MarshalYAML() (interface{}, error) {
 	return v.String(), nil
 }
 
+// UnmarshalYAML implements the yaml.v2 Unmarshaler interface.
 func (v *Version) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var text string
 	if err := unmarshal(&text); err != nil {
@@ -345,6 +364,7 @@ func (v *Version) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return v.UnmarshalText([]byte(text))
 }
 
+// IsZero returns true if the version is nil or empty
 func (v *Version) IsZero() bool {
 	return v == nil || v.numSegments == 0
 }
