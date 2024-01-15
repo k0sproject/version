@@ -1,8 +1,10 @@
-package version
+package version_test
 
 import (
 	"fmt"
 	"testing"
+
+	"github.com/k0sproject/version"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -112,14 +114,14 @@ func TestConstraint(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.constraint, func(t *testing.T) {
-			c, err := NewConstraint(tc.constraint)
+			c, err := version.NewConstraint(tc.constraint)
 			assert.NoError(t, err)
 
 			for expected, versions := range tc.truthTable {
 				t.Run(fmt.Sprintf("%t", expected), func(t *testing.T) {
 					for _, v := range versions {
 						t.Run(v, func(t *testing.T) {
-							assert.Equal(t, expected, c.Check(MustParse(v)))
+							assert.Equal(t, expected, c.Check(version.MustParse(v)))
 						})
 					}
 				})
@@ -138,13 +140,13 @@ func TestInvalidConstraint(t *testing.T) {
 	}
 
 	for _, invalidConstraint := range invalidConstraints {
-		_, err := NewConstraint(invalidConstraint)
+		_, err := version.NewConstraint(invalidConstraint)
 		assert.Error(t, err, "Expected error for invalid constraint: "+invalidConstraint)
 	}
 }
 
 func TestCheckString(t *testing.T) {
-	c, err := NewConstraint(">= 1.0.0")
+	c, err := version.NewConstraint(">= 1.0.0")
 	assert.NoError(t, err)
 
 	assert.True(t, c.CheckString("1.0.0"))
@@ -153,7 +155,7 @@ func TestCheckString(t *testing.T) {
 }
 
 func TestString(t *testing.T) {
-	c, err := NewConstraint(">= 1.0.0, < 2.0.0")
+	c, err := version.NewConstraint(">= 1.0.0, < 2.0.0")
 	assert.NoError(t, err)
 
 	assert.Equal(t, ">= 1.0.0, < 2.0.0", c.String())

@@ -1,27 +1,28 @@
-package version
+package version_test
 
 import (
 	"encoding/json"
 	"sort"
 	"testing"
 
+	"github.com/k0sproject/version"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewCollection(t *testing.T) {
-	c, err := NewCollection("1.23.3+k0s.1", "1.23.4+k0s.1")
-	require.NoError(t, err)
+	c, err := version.NewCollection("1.23.3+k0s.1", "1.23.4+k0s.1")
+	assert.NoError(t, err)
 	assert.Equal(t, "v1.23.3+k0s.1", c[0].String())
 	assert.Equal(t, "v1.23.4+k0s.1", c[1].String())
 	assert.Len(t, c, 2)
-	_, err = NewCollection("1.23.3+k0s.1", "1.23.b+k0s.1")
+	_, err = version.NewCollection("1.23.3+k0s.1", "1.23.b+k0s.1")
 	assert.Error(t, err)
 }
 
 func TestSorting(t *testing.T) {
-	c, err := NewCollection(
-		"1.22.3+k0s.0",
+	c, err := version.NewCollection(
 		"1.21.2+k0s.0",
 		"1.21.2-beta.1+k0s.0",
 		"1.21.1+k0s.1",
@@ -39,8 +40,8 @@ func TestSorting(t *testing.T) {
 }
 
 func TestCollectionMarshalling(t *testing.T) {
-	c, err := NewCollection("v1.0.0+k0s.0", "v1.0.1+k0s.0")
-	require.NoError(t, err)
+	c, err := version.NewCollection("v1.0.0+k0s.0", "v1.0.1+k0s.0")
+	assert.NoError(t, err)
 
 	t.Run("JSON", func(t *testing.T) {
 		jsonData, err := json.Marshal(c)
@@ -51,7 +52,7 @@ func TestCollectionMarshalling(t *testing.T) {
 
 func TestCollectionUnmarshalling(t *testing.T) {
 	t.Run("JSON", func(t *testing.T) {
-		var c Collection
+		var c version.Collection
 		err := json.Unmarshal([]byte(`["v1.0.0+k0s.1","v1.0.1+k0s.1"]`), &c)
 		require.NoError(t, err)
 		assert.Equal(t, "v1.0.0+k0s.1", c[0].String())
@@ -61,7 +62,7 @@ func TestCollectionUnmarshalling(t *testing.T) {
 
 func TestFailingCollectionUnmarshalling(t *testing.T) {
 	t.Run("JSON", func(t *testing.T) {
-		var c Collection
+		var c version.Collection
 		err := json.Unmarshal([]byte(`invalid_json`), &c)
 		assert.Error(t, err)
 		err = json.Unmarshal([]byte(`["invalid_version"]`), &c)
