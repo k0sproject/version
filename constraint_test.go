@@ -117,9 +117,9 @@ func TestConstraint(t *testing.T) {
 
 			for expected, versions := range tc.truthTable {
 				t.Run(fmt.Sprintf("%t", expected), func(t *testing.T) {
-					for _, version := range versions {
-						t.Run(version, func(t *testing.T) {
-							assert.Equal(t, expected, c.Check(MustParse(version)))
+					for _, v := range versions {
+						t.Run(v, func(t *testing.T) {
+							assert.Equal(t, expected, c.Check(MustParse(v)))
 						})
 					}
 				})
@@ -138,7 +138,7 @@ func TestInvalidConstraint(t *testing.T) {
 	}
 
 	for _, invalidConstraint := range invalidConstraints {
-		_, err := newConstraint(invalidConstraint)
+		_, err := NewConstraint(invalidConstraint)
 		assert.Error(t, err, "Expected error for invalid constraint: "+invalidConstraint)
 	}
 }
@@ -158,4 +158,3 @@ func TestString(t *testing.T) {
 
 	assert.Equal(t, ">= 1.0.0, < 2.0.0", c.String())
 }
-
