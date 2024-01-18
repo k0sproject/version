@@ -10,18 +10,21 @@ import (
 )
 
 func NoError(t *testing.T, err error) {
+	t.Helper() // these make the log messages display the correct line number
 	if err != nil {
 		t.Fatalf("Received an unexpected error: %v", err)
 	}
 }
 
 func Error(t *testing.T, err error) {
+	t.Helper()
 	if err == nil {
 		t.Fatalf("Expected an error, got nil")
 	}
 }
 
 func Equal(t *testing.T, expected, actual interface{}) {
+	t.Helper()
 	if reflect.DeepEqual(expected, actual) {
 		return
 	}
@@ -29,6 +32,7 @@ func Equal(t *testing.T, expected, actual interface{}) {
 }
 
 func True(t *testing.T, actual bool) {
+	t.Helper()
 	if actual {
 		return
 	}
@@ -36,6 +40,7 @@ func True(t *testing.T, actual bool) {
 }
 
 func False(t *testing.T, actual bool) {
+	t.Helper()
 	if !actual {
 		return
 	}
@@ -43,6 +48,7 @@ func False(t *testing.T, actual bool) {
 }
 
 func Nil(t *testing.T, actual interface{}) {
+	t.Helper()
 	if actual == nil {
 		return
 	}
@@ -62,13 +68,19 @@ func TestWithK0s(t *testing.T) {
 	v, err := version.NewVersion("1.23.3+k0s.1")
 	NoError(t, err)
 	True(t, v.IsK0s())
-	Equal(t, 1, v.K0sVersion())
+	k0s, ok := v.K0s()
+	Equal(t, 1, k0s)
+	True(t, ok)
 	v2 := v.WithK0s(2)
 	NoError(t, err)
 	Equal(t, "v1.23.3+k0s.2", v2.String())
-	Equal(t, 2, v2.K0sVersion())
+	k0s, ok = v2.K0s()
+	Equal(t, 2, k0s)
+	True(t, ok)
 	// ensure original didnt change
-	Equal(t, 1, v.K0sVersion())
+	k0s, ok = v.K0s()
+	True(t, ok)
+	Equal(t, 1, k0s)
 
 	v, err = version.NewVersion("1.23.3")
 	NoError(t, err)
@@ -77,7 +89,9 @@ func TestWithK0s(t *testing.T) {
 	NoError(t, err)
 	Equal(t, "v1.23.3+k0s.2", v2.String())
 	// ensure original didnt change
-	Equal(t, -1, v.K0sVersion())
+	False(t, v.IsK0s())
+	_, ok = v.K0s()
+	False(t, ok)
 }
 
 func TestBasicComparison(t *testing.T) {
