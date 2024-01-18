@@ -53,8 +53,31 @@ func TestNewVersion(t *testing.T) {
 	v, err := version.NewVersion("1.23.3+k0s.1")
 	NoError(t, err)
 	Equal(t, "v1.23.3+k0s.1", v.String())
+	Equal(t, "v1.23.3", v.Base())
 	_, err = version.NewVersion("v1.23.b+k0s.1")
 	Error(t, err)
+}
+
+func TestWithK0s(t *testing.T) {
+	v, err := version.NewVersion("1.23.3+k0s.1")
+	NoError(t, err)
+	True(t, v.IsK0s())
+	Equal(t, 1, v.K0sVersion())
+	v2 := v.WithK0s(2)
+	NoError(t, err)
+	Equal(t, "v1.23.3+k0s.2", v2.String())
+	Equal(t, 2, v2.K0sVersion())
+	// ensure original didnt change
+	Equal(t, 1, v.K0sVersion())
+
+	v, err = version.NewVersion("1.23.3")
+	NoError(t, err)
+	False(t, v.IsK0s())
+	v2 = v.WithK0s(2)
+	NoError(t, err)
+	Equal(t, "v1.23.3+k0s.2", v2.String())
+	// ensure original didnt change
+	Equal(t, -1, v.K0sVersion())
 }
 
 func TestBasicComparison(t *testing.T) {
