@@ -135,7 +135,7 @@ func (v *Version) IsK0s() bool {
 	return v.isK0s
 }
 
-// K0s returns the k0s version (eg 4 from v1.2.3-k0s.4)
+// K0s returns the k0s version (eg 4 from v1.2.3-k0s.4) and true if the version is a k0s version. Otherwise it returns -1 and false.
 func (v *Version) K0s() (int, bool) {
 	if !v.isK0s {
 		return -1, false
