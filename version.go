@@ -125,6 +125,14 @@ func (v *Version) Segments() []int {
 	return v.segments[:v.numSegments]
 }
 
+// segmentEqual checks if the segments at the specified index are equal between two versions.
+func (v *Version) segmentEqual(b *Version, index int) bool {
+	if v == nil || b == nil || index < 0 || index >= maxSegments {
+		return false
+	}
+	return v.segments[index] == b.segments[index]
+}
+
 // Prerelease returns the prerelease part of the k0s version (eg rc1 from v1.2.3-rc1).
 func (v *Version) Prerelease() string {
 	return v.pre
@@ -343,6 +351,47 @@ func (v *Version) GreaterThanOrEqual(b *Version) bool {
 // LessThanOrEqual returns true if the version is lower than the supplied version or equal
 func (v *Version) LessThanOrEqual(b *Version) bool {
 	return v.Compare(b) <= 0
+}
+
+// IsMinorUpgrade returns true if upgrading to version "b" would be a minor upgrade.
+func (v *Version) IsMinorUpgrade(b *Version) bool {
+	if v == nil || b == nil {
+		return false
+	}
+
+	return v.LessThan(b) && v.segmentEqual(b, 0) && // Same major version
+		v.segments[1] < b.segments[1]
+}
+
+// IsMajorUpgrade returns true if upgrading to version "b" would be a major update.
+func (v *Version) IsMajorUpgrade(b *Version) bool {
+	if v == nil || b == nil {
+		return false
+	}
+	return v.LessThan(b) && v.segments[0] < b.segments[0] // Major version is greater
+}
+
+// IsPatchUpgrade returns true if upgrading to version "b" would be a patch update.
+func (v *Version) IsPatchUpgrade(b *Version) bool {
+	if v == nil || b == nil {
+		return false
+	}
+	return v.LessThan(b) && v.segmentEqual(b, 0) && // Same major version
+		v.segmentEqual(b, 1) && // Same minor version
+		v.segments[2] < b.segments[2] // Patch version is greater
+}
+
+// IsK0sUpgrade returns true if upgrading to version "b" would only update the k0s version.
+func (v *Version) IsK0sUpgrade(b *Version) bool {
+	if v == nil || b == nil {
+		return false
+	}
+	return v.segmentEqual(b, 0) &&
+		v.segmentEqual(b, 1) &&
+		v.segmentEqual(b, 2) &&
+		v.pre == b.pre &&
+		v.isK0s && b.isK0s &&
+		v.k0s < b.k0s
 }
 
 // MarshalText implements the encoding.TextMarshaler interface (used as fallback by encoding/json and yaml.v3).

@@ -130,6 +130,82 @@ func TestSatisfies(t *testing.T) {
 	False(t, v.Satisfies(version.MustConstraint("<1.23.1+k0s.1")))
 }
 
+func TestIsUpgrade(t *testing.T) {
+	cases := []struct {
+		name         string
+		current      string
+		target       string
+		isMinor      bool
+		isMajor      bool
+		isPatch      bool
+		isK0sUpgrade bool
+	}{
+		{
+			name:         "Minor upgrade",
+			current:      "1.23.1",
+			target:       "1.24.0",
+			isMinor:      true,
+			isMajor:      false,
+			isPatch:      false,
+			isK0sUpgrade: false,
+		},
+		{
+			name:         "Major upgrade",
+			current:      "1.23.1",
+			target:       "2.0.0",
+			isMinor:      false,
+			isMajor:      true,
+			isPatch:      false,
+			isK0sUpgrade: false,
+		},
+		{
+			name:         "Patch upgrade",
+			current:      "1.23.1",
+			target:       "1.23.2",
+			isMinor:      false,
+			isMajor:      false,
+			isPatch:      true,
+			isK0sUpgrade: false,
+		},
+		{
+			name:         "K0s upgrade",
+			current:      "1.23.1+k0s.1",
+			target:       "1.23.1+k0s.2",
+			isMinor:      false,
+			isMajor:      false,
+			isPatch:      false,
+			isK0sUpgrade: true,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			current, err := version.NewVersion(tc.current)
+			if err != nil {
+				t.Fatalf("Failed to parse current version: %v", err)
+			}
+
+			target, err := version.NewVersion(tc.target)
+			if err != nil {
+				t.Fatalf("Failed to parse target version: %v", err)
+			}
+
+			if got := current.IsMinorUpgrade(target); got != tc.isMinor {
+				t.Errorf("IsMinorUpgrade: expected %v, got %v", tc.isMinor, got)
+			}
+			if got := current.IsMajorUpgrade(target); got != tc.isMajor {
+				t.Errorf("IsMajorUpgrade: expected %v, got %v", tc.isMajor, got)
+			}
+			if got := current.IsPatchUpgrade(target); got != tc.isPatch {
+				t.Errorf("IsPatchUpgrade: expected %v, got %v", tc.isPatch, got)
+			}
+			if got := current.IsK0sUpgrade(target); got != tc.isK0sUpgrade {
+				t.Errorf("IsK0sUpgrade: expected %v, got %v", tc.isK0sUpgrade, got)
+			}
+		})
+	}
+}
+
 func TestURLs(t *testing.T) {
 	a, err := version.NewVersion("1.23.3+k0s.1")
 	NoError(t, err)
@@ -216,7 +292,7 @@ func TestFailingUnmarshalling(t *testing.T) {
 	})
 
 	t.Run("YAML", func(t *testing.T) {
-		var v = &version.Version{}
+		v := &version.Version{}
 		err := v.UnmarshalYAML(func(i interface{}) error {
 			return errors.New("forced error")
 		})
