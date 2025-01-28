@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-var constraintRegex = regexp.MustCompile(`^(?:(>=|>|<=|<|!=|==?)\s*)?(.+)$`)
+var constraintRegex = regexp.MustCompile(`^(?:(>>?=|>>?|<<?=|<<?|!=|==?)\s*)?(.+)$`)
 
 type (
 	constraintFunc func(a, b *Version) bool
@@ -58,23 +58,9 @@ func (cs Constraints) String() string {
 	return strings.Join(s, ", ")
 }
 
-// CheckPre returns true if the given version satisfies all of the constraints. Pre-releases can satisfy stable constraints, ie. "1.0.1-alpha.1" satisfies ">= 1.0.0".
-func (cs Constraints) CheckPre(v *Version) bool {
-	for _, c := range cs {
-		if !c.f(c.b, v) {
-			return false
-		}
-	}
-
-	return true
-}
-
-// Check returns true if the given version satisfies all of the constraints. Pre-releases do not satisfy stable constraints, ie. "1.0.1-alpha.1" does not satisfy ">= 1.0.0" but does satisfy ">= 1.0.0-alpha.1".
+// Check returns true if the given version satisfies all of the constraints.
 func (cs Constraints) Check(v *Version) bool {
 	for _, c := range cs {
-		if c.b.Prerelease() == "" && v.Prerelease() != "" {
-			return false
-		}
 		if !c.f(c.b, v) {
 			return false
 		}
@@ -147,17 +133,34 @@ func opfunc(s string) (constraintFunc, error) {
 	case "", "=", "==":
 		return eq, nil
 	case ">":
+		return strict(gt), nil
+	case ">>":
 		return gt, nil
 	case ">=":
+		return strict(gte), nil
+	case ">>=":
 		return gte, nil
 	case "<":
-		return lt, nil
+		return strict(lt), nil
 	case "<=":
+		return strict(lte), nil
+	case "<<":
+		return lt, nil
+	case "<<=":
 		return lte, nil
 	case "!=":
 		return neq, nil
 	default:
 		return nil, errors.New("invalid operator: " + s)
+	}
+}
+
+func strict(compFunc func(a, b *Version) bool) func(a, b *Version) bool {
+	return func(a, b *Version) bool {
+		if a.pre == "" && b.pre != "" {
+			return false
+		}
+		return compFunc(a, b)
 	}
 }
 

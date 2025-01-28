@@ -56,6 +56,52 @@ Outputs:
 constraint > 1.2.3 satisfied by v1.23.3+k0s.1: true
 ```
 
+#### Operators
+
+Single `<` and `>` do not match prereleases unless the constraint itself is also a prerelease. Use `<<` and `>>` to allow prereleases to satisfy a stable constraint.
+
+| OP  | Description                                    |
+| --- | ---------------------------------------------- |
+| <   | Less than                                      |
+| <<  | Less than, allowing prereleases                |
+| <=  | Less than or equal to                          |
+| <== | Less than or equal to, allowing prereleases    |
+| >   | Greater than                                   |
+| >>  | Greater than, allowing prereleases             |
+| >=  | Greater than or equal to                       |
+| >== | Greater than or equal to, allowing prereleases |
+| ==  | Equal to                                       |
+| !=  | Not equal to                                   |
+
+Examples:
+
+- `< 1.0.0` 
+  - Matches `0.9.9`.
+  - Does not match `1.0.0`.
+  - Does not match `0.9.9-rc.2` or `1.0.0-alpha.1` because the constraint is stable.
+- `< 1.0.0-rc.1`
+  - Matches `0.9.9` and `1.0.0-alpha.1` because the constraint defines a pre-release.
+  - Does not match `1.0.0` or `1.0.0-rc.2`.
+- `<< 1.0.0`
+  - Matches `0.9.9`.
+  - Matches `1.0.0-alpha.1` because the pre-release inclusive `<<` operator was used.
+  - Does not match `1.0.0`.
+
+Constraints can be combined using a comma (`,`) to form multiple ranges. All ranges must be satisfied for a version to match the constraint. This allows precise control over acceptable version ranges.
+
+- `>= 1.0.0, < 2.0.0`:
+  - Matches versions from `1.0.0` (inclusive) up to `2.0.0` (exclusive).
+  - Does not match any prereleases.
+
+- `>>= 1.0.0, << 2.0.0`:
+  - Matches versions from `1.0.0` (inclusive) up to `2.0.0` (exclusive), including pre-releases of `2.0.0`.
+  - Matches `2.0.0-rc.1` but not `2.0.0`.
+  - Matches `1.0.1-alpha.1` but not `1.0.0-rc.1`.
+- `>> 1.0.0, < 2.0.0`
+  - Matches `1.1.0`.
+  - Does not match `1.1.0-rc.1` because the second part will not match any pre-releases, any pre-releases matched by the first part get rejected.
+
+
 ### Sorting
 
 ```go
