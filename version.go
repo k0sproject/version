@@ -241,6 +241,29 @@ func (v *Version) Equal(b *Version) bool {
 	return v.comparableFields == b.comparableFields
 }
 
+// Something that can match a version.
+// Most notably implemented by [Constraints].
+type VersionMatcher interface {
+	// Returns whether or not the given version is a match for this matcher.
+	MatchVersion(*Version) bool
+}
+
+// Matches v against m.
+func (v *Version) Is(m VersionMatcher) bool {
+	return m.MatchVersion(v)
+}
+
+// Implements [VersionMatcher]. Same as [Version.Equal].
+func (v *Version) MatchVersion(other *Version) bool {
+	return v.Equal(other)
+}
+
+type VersionMatcherFunc func(*Version) bool
+
+func (f VersionMatcherFunc) MatchVersion(v *Version) bool {
+	return f(v)
+}
+
 // Compare returns 0 if the k0s version is equal to the supplied version, 1 if it's greater and -1 if it's lower
 func (v *Version) Compare(b *Version) int {
 	if v.Equal(b) {
@@ -343,6 +366,44 @@ func (v *Version) GreaterThanOrEqual(b *Version) bool {
 // LessThanOrEqual returns true if the version is lower than the supplied version or equal
 func (v *Version) LessThanOrEqual(b *Version) bool {
 	return v.Compare(b) <= 0
+}
+
+// Something that can compare to a version. Similar to [VersionMatcher], but
+// different in that it implies order, not just a yes or no relationship.
+type VersionComparer interface {
+	CompareVersion(*Version) int
+}
+
+func (v *Version) IsNewerThan(c VersionComparer) bool {
+	return v.Is(NewerThan(c))
+}
+
+func (v *Version) IsAtLeast(c VersionComparer) bool {
+	return v.Is(AtLeast(c))
+}
+
+func (v *Version) IsOlderThan(c VersionComparer) bool {
+	return v.Is(OlderThan(c))
+}
+
+func (v *Version) IsAtMost(c VersionComparer) bool {
+	return v.Is(AtMost(c))
+}
+
+func NewerThan(c VersionComparer) VersionMatcherFunc {
+	return func(v *Version) bool { return c.CompareVersion(v) < 0 }
+}
+
+func AtLeast(c VersionComparer) VersionMatcherFunc {
+	return func(v *Version) bool { return c.CompareVersion(v) <= 0 }
+}
+
+func OlderThan(c VersionComparer) VersionMatcherFunc {
+	return func(v *Version) bool { return c.CompareVersion(v) > 0 }
+}
+
+func AtMost(c VersionComparer) VersionMatcherFunc {
+	return func(v *Version) bool { return c.CompareVersion(v) >= 0 }
 }
 
 // MarshalText implements the encoding.TextMarshaler interface (used as fallback by encoding/json and yaml.v3).

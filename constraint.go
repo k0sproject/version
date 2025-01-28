@@ -80,6 +80,11 @@ func (cs Constraints) CheckString(v string) bool {
 	return cs.Check(vv)
 }
 
+// Implements [VersionMatcher]: Same as [Constraints.Check].
+func (cs Constraints) MatchesVersion(v *Version) bool {
+	return cs.Check(v)
+}
+
 // String returns the original constraint string.
 func (c *constraint) String() string {
 	return c.original
@@ -154,4 +159,3 @@ func gte(a, b *Version) bool { return b.GreaterThanOrEqual(a) }
 func lte(a, b *Version) bool { return b.LessThanOrEqual(a) }
 func eq(a, b *Version) bool  { return b.Equal(a) }
 func neq(a, b *Version) bool { return !b.Equal(a) }
-
