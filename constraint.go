@@ -9,12 +9,14 @@ import (
 
 var constraintRegex = regexp.MustCompile(`^(?:(>=|>|<=|<|!=|==?)\s*)?(.+)$`)
 
-type constraintFunc func(a, b *Version) bool
-type constraint struct {
-	f        constraintFunc
-	b        *Version
-	original string
-}
+type (
+	constraintFunc func(a, b *Version) bool
+	constraint     struct {
+		f        constraintFunc
+		b        *Version
+		original string
+	}
+)
 
 // Constraints is a collection of version constraint rules that can be checked against a version.
 type Constraints []constraint
@@ -56,7 +58,18 @@ func (cs Constraints) String() string {
 	return strings.Join(s, ", ")
 }
 
-// Check returns true if the given version satisfies all of the constraints.
+// CheckPre returns true if the given version satisfies all of the constraints. Pre-releases can satisfy stable constraints, ie. "1.0.1-alpha.1" satisfies ">= 1.0.0".
+func (cs Constraints) CheckPre(v *Version) bool {
+	for _, c := range cs {
+		if !c.f(c.b, v) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// Check returns true if the given version satisfies all of the constraints. Pre-releases do not satisfy stable constraints, ie. "1.0.1-alpha.1" does not satisfy ">= 1.0.0" but does satisfy ">= 1.0.0-alpha.1".
 func (cs Constraints) Check(v *Version) bool {
 	for _, c := range cs {
 		if c.b.Prerelease() == "" && v.Prerelease() != "" {
@@ -154,4 +167,3 @@ func gte(a, b *Version) bool { return b.GreaterThanOrEqual(a) }
 func lte(a, b *Version) bool { return b.LessThanOrEqual(a) }
 func eq(a, b *Version) bool  { return b.Equal(a) }
 func neq(a, b *Version) bool { return !b.Equal(a) }
-

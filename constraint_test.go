@@ -7,7 +7,7 @@ import (
 	"github.com/k0sproject/version"
 )
 
-func TestConstraint(t *testing.T) {
+func TestCheck(t *testing.T) {
 	type testCase struct {
 		constraint string
 		truthTable map[bool][]string
@@ -120,6 +120,80 @@ func TestConstraint(t *testing.T) {
 					for _, v := range versions {
 						t.Run(v, func(t *testing.T) {
 							Equal(t, expected, c.Check(version.MustParse(v)))
+						})
+					}
+				})
+			}
+		})
+	}
+}
+
+func TestCheckPre(t *testing.T) {
+	type testCase struct {
+		constraint string
+		truthTable map[bool][]string
+	}
+
+	testCases := []testCase{
+		{
+			constraint: ">= 1.0.0",
+			truthTable: map[bool][]string{
+				true: {
+					"1.0.0",
+					"1.0.1-rc.1",
+					"1.0.1",
+				},
+				false: {
+					"0.9.9-rc.1",
+					"1.0.0-alpha.1",
+					"1.0.0-rc.1",
+				},
+			},
+		},
+		{
+			constraint: ">= 1.0.0-alpha.2",
+			truthTable: map[bool][]string{
+				true: {
+					"1.0.0-alpha.2",
+					"1.0.0-alpha.3",
+					"1.0.0-rc.1",
+					"1.0.0",
+					"2.0.1",
+				},
+				false: {
+					"0.9.9-rc.1",
+					"0.9.9",
+					"1.0.0-alpha.1",
+				},
+			},
+		},
+		{
+			constraint: "< 1.0.0-rc.1",
+			truthTable: map[bool][]string{
+				true: {
+					"1.0.0-alpha.1",
+					"1.0.0-beta.6",
+					"0.9.9",
+				},
+				false: {
+					"1.0.0-rc.1",
+					"1.0.1-alpha.1",
+					"1.0.0",
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.constraint, func(t *testing.T) {
+			c, err := version.NewConstraint(tc.constraint)
+			NoError(t, err)
+
+			for expected, versions := range tc.truthTable {
+				t.Run(fmt.Sprintf("%t", expected), func(t *testing.T) {
+					for _, v := range versions {
+						t.Run(v, func(t *testing.T) {
+							Equal(t, expected, c.CheckPre(version.MustParse(v)))
 						})
 					}
 				})
