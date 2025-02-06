@@ -1,9 +1,15 @@
 package version_test
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/k0sproject/version"
@@ -114,6 +120,126 @@ func TestK0sComparison(t *testing.T) {
 	True(t, a.LessThan(b))
 	False(t, a.LessThan(a))
 	False(t, b.Equal(a))
+}
+
+func TestVersion_TotalOrder(t *testing.T) {
+	// Store the ordering in a file for manual inspection.
+	orderingFilePath := filepath.Join("testdata", "version-ordering.txt")
+	data, err := os.ReadFile(orderingFilePath)
+	if err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			t.Fatal(err)
+		}
+
+		data = generateVersionOrdering()
+		if err := os.WriteFile(orderingFilePath, data, 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	var totalOrder [][]*version.Version
+	lines := bufio.NewScanner(bytes.NewReader(data))
+	for lines.Scan() {
+		var lineNo uint
+		var eq []*version.Version
+		for _, v := range strings.Split(lines.Text(), " ") {
+			lineNo++
+			parsed, err := version.NewVersion(v)
+			if err != nil {
+				t.Fatalf("Failed to parse %q on line %d: %v", parsed, lineNo, err)
+			}
+			eq = append(eq, parsed)
+		}
+
+		totalOrder = append(totalOrder, eq)
+	}
+
+	for _, test := range []struct {
+		name     string
+		op       func(l, r *version.Version) bool
+		expected func(l, r int) bool
+	}{{
+		"Equal",
+		func(l, r *version.Version) bool { return l.Equal(r) },
+		func(l, r int) bool { return l == r },
+	}, {
+		"LessThan",
+		func(l, r *version.Version) bool { return l.LessThan(r) },
+		func(l, r int) bool { return l < r },
+	}, {
+		"GreaterThan",
+		func(l, r *version.Version) bool { return l.GreaterThan(r) },
+		func(l, r int) bool { return l > r },
+	}, {
+		"LessThanOrEqual",
+		func(l, r *version.Version) bool { return l.LessThanOrEqual(r) },
+		func(l, r int) bool { return l <= r },
+	}, {
+		"GreaterThanOrEqual",
+		func(l, r *version.Version) bool { return l.GreaterThanOrEqual(r) },
+		func(l, r int) bool { return l >= r },
+	}} {
+		t.Run(test.name, func(t *testing.T) {
+			for rIdx, r := range totalOrder {
+				for lIdx, l := range totalOrder {
+					for _, r := range r {
+						for _, l := range l {
+							if expected, actual := test.expected(lIdx, rIdx), test.op(l, r); expected != actual {
+								t.Errorf("Expected %q.%s(%q) to be %t, but was %t", l, test.name, r, expected, actual)
+							}
+						}
+					}
+				}
+			}
+		})
+	}
+}
+
+func generateVersionOrdering() []byte {
+	var buf bytes.Buffer
+
+	maj := []uint{0, 1}
+	min := []uint{0, 1}
+	pat := []uint{0, 1}
+	pre := []string{"-0", "-z", ""}
+	meta := []string{"", "+0", "+z"}
+	k0s := []string{"", "+k0s.0", "+k0s.1"}
+
+	for _, maj := range maj {
+		for _, min := range min {
+			for _, pat := range pat {
+				for _, pre := range pre {
+					for _, k0s := range k0s {
+						// All the metas are equal to each other.
+						meta := meta
+
+						// Except if it's a "k0s meta". Those are ordered.
+						if k0s != "" {
+							meta = []string{k0s}
+						}
+
+						// Write out all the equal version strings in a single line, space separated.
+						for i, meta := range meta {
+							if i > 0 {
+								buf.WriteByte(' ')
+							}
+							// Trailing zero minor and patch versions are equal, as well.
+							if pat == 0 {
+								if min == 0 {
+									fmt.Fprintf(&buf, "%d%s%s ", maj, pre, meta)
+								}
+								fmt.Fprintf(&buf, "%d.%d%s%s ", maj, min, pre, meta)
+							}
+							fmt.Fprintf(&buf, "%d.%d.%d%s%s", maj, min, pat, pre, meta)
+						}
+						buf.WriteByte('\n')
+					}
+				}
+			}
+		}
+	}
+
+	return buf.Bytes()
 }
 
 func TestSatisfies(t *testing.T) {
