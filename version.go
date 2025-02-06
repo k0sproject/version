@@ -120,9 +120,16 @@ func NewVersion(v string) (*Version, error) {
 	return version, nil
 }
 
-// Segments returns the numerical segments of the k0s version (eg 1.2.3 from v1.2.3).
+// Segments returns the numerical segments of the version. The returned slice is always maxSegments long. Missing segments are zeroes. Eg 1,1,0 from v1.1
 func (v *Version) Segments() []int {
-	return v.segments[:v.numSegments]
+	segments := make([]int, maxSegments) // Create a slice with maxSegments length
+
+	for i := 0; i < v.numSegments; i++ {
+		segments[i] = v.segments[i] // Copy existing segments
+	}
+
+	// Remaining elements stay as 0, ensuring normalization
+	return segments
 }
 
 // Prerelease returns the prerelease part of the k0s version (eg rc1 from v1.2.3-rc1).
@@ -168,7 +175,7 @@ func (v *Version) ComparableFields() comparableFields {
 	return v.comparableFields
 }
 
-// Segments64 returns the numerical segments of the k0s version as int64 (eg 1.2.3 from v1.2.3).
+// Segments64 returns the numerical segments of the k0s version as int64 (eg 1,2,3 from v1.2.3). Missing segments are zeroes.
 func (v *Version) Segments64() []int64 {
 	segments := make([]int64, v.numSegments)
 	for i := 0; i < v.numSegments; i++ {
@@ -246,50 +253,62 @@ func (v *Version) Compare(b *Version) int {
 	if v.Equal(b) {
 		return 0
 	}
+	vSegments := v.Segments()
+	bSegmente := b.Segments()
 	for i := 0; i < maxSegments; i++ {
-		if v.numSegments >= i+1 && b.numSegments >= i+1 {
-			if v.segments[i] > b.segments[i] {
-				return 1
-			}
-			if v.segments[i] < b.segments[i] {
-				return -1
-			}
-		}
-		if i >= v.numSegments && i < b.numSegments {
-			// b has more segments, so it's greater
+		if vSegments[i] < bSegmente[i] {
 			return -1
 		}
-		if i >= b.numSegments && i < v.numSegments {
-			// v has more segments, so it's greater
+		if vSegments[i] > bSegmente[i] {
 			return 1
 		}
 	}
+
+	// segments are equal continue to inspect prerelease part
+
 	if v.pre == "" && b.pre != "" {
+		// v is stable, b is pre, so v is greater
 		return 1
 	}
 	if v.pre != "" && b.pre == "" {
+		// v is pre, b is stable, so v is lower
 		return -1
 	}
-	// segments are equal, so compare pre
+
+	// both versions are either pre or stable
+
 	if v.pre < b.pre {
 		return -1
 	}
 	if v.pre > b.pre {
 		return 1
 	}
+
+	// both versions are equal up to and including the possible prerelease part
+
 	if v.isK0s && !b.isK0s {
+		// any k0s is greater than no k0s
 		return 1
 	}
+
 	if !v.isK0s && b.isK0s {
+		// not having k0s is worse than having k0s
 		return -1
 	}
+
+	// both versions are either k0s or not k0s
+
 	if v.k0s > b.k0s {
 		return 1
 	}
 	if v.k0s < b.k0s {
 		return -1
 	}
-	// meta should not affect precedence
+
+	// both versions are equal up to and including the possible k0s part
+
+	// any other +meta should not affect precedence and thus we can
+	// consider the versions equal
 	return 0
 }
 
