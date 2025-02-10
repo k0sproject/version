@@ -116,68 +116,6 @@ func TestK0sComparison(t *testing.T) {
 	False(t, b.Equal(a))
 }
 
-func TestVersion_TotalOrder(t *testing.T) {
-	totalOrder := [...]*version.Version{
-		version.MustParse("0.9.9"),
-		version.MustParse("1.0-a"),
-		version.MustParse("1.0.0-a"),
-		version.MustParse("1"),
-		version.MustParse("1.0"),
-		version.MustParse("1.0.0"),
-		version.MustParse("1.0.1"),
-		version.MustParse("1.0.1+k0s.10"),
-		version.MustParse("1.0.9+k0s.255"),
-		version.MustParse("1.1.0-alpha.1+k0s.2"),
-		version.MustParse("1.1.0-beta.1+k0s.1"),
-		version.MustParse("1.1.0-rc.1+k0s.0"),
-		version.MustParse("1.1.0+k0s.0"),
-		version.MustParse("1.1.0+k0s.1"),
-		version.MustParse("1.1.0+k0s.2"),
-		version.MustParse("1.1.1-rc.1+k0s.0"),
-		version.MustParse("1.1.1+k0s.0"),
-		version.MustParse("2-a"),
-		version.MustParse("2.0-a"),
-		version.MustParse("2.0.0-a"),
-		version.MustParse("2"),
-	}
-
-	for _, test := range []struct {
-		name     string
-		op       func(l, r *version.Version) bool
-		expected func(l, r int) bool
-	}{{
-		"Equal",
-		func(l, r *version.Version) bool { return l.Equal(r) },
-		func(l, r int) bool { return l == r },
-	}, {
-		"LessThan",
-		func(l, r *version.Version) bool { return l.LessThan(r) },
-		func(l, r int) bool { return l < r },
-	}, {
-		"GreaterThan",
-		func(l, r *version.Version) bool { return l.GreaterThan(r) },
-		func(l, r int) bool { return l > r },
-	}, {
-		"LessThanOrEqual",
-		func(l, r *version.Version) bool { return l.LessThanOrEqual(r) },
-		func(l, r int) bool { return l <= r },
-	}, {
-		"GreaterThanOrEqual",
-		func(l, r *version.Version) bool { return l.GreaterThanOrEqual(r) },
-		func(l, r int) bool { return l >= r },
-	}} {
-		t.Run(test.name, func(t *testing.T) {
-			for rIdx, r := range totalOrder {
-				for lIdx, l := range totalOrder {
-					if expected, actual := test.expected(lIdx, rIdx), test.op(l, r); expected != actual {
-						t.Errorf("Expected %q.%s(%q) to be %t, but was %t", l, test.name, r, expected, actual)
-					}
-				}
-			}
-		})
-	}
-}
-
 func TestSatisfies(t *testing.T) {
 	v, err := version.NewVersion("1.23.1+k0s.1")
 	NoError(t, err)

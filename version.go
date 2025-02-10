@@ -239,20 +239,22 @@ func (v *Version) Equal(b *Version) bool {
 		return false
 	}
 
-	if v.s != "" && b.s != "" {
-		// compare strings if both versions are already stringified
-		return v.s == b.s
-	}
-
-	// compare comparable fields using go's equality operator
-	return v.comparableFields == b.comparableFields
+	return v.Compare(b) == 0
 }
 
 // Compare returns 0 if the k0s version is equal to the supplied version, 1 if it's greater and -1 if it's lower
 func (v *Version) Compare(b *Version) int {
-	if v.Equal(b) {
+	switch {
+	case v == nil && b == nil:
+		return -1
+	case v == nil && b != nil:
+		return -1
+	case v != nil && b == nil:
+		return 1
+	case v == b:
 		return 0
 	}
+
 	vSegments := v.Segments()
 	bSegmente := b.Segments()
 	for i := 0; i < maxSegments; i++ {
