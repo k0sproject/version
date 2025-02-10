@@ -246,7 +246,7 @@ func (v *Version) Equal(b *Version) bool {
 func (v *Version) Compare(b *Version) int {
 	switch {
 	case v == nil && b == nil:
-		return -1
+		return 0 
 	case v == nil && b != nil:
 		return -1
 	case v != nil && b == nil:
