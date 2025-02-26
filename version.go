@@ -413,6 +413,34 @@ func (v *Version) Satisfies(constraint Constraints) bool {
 	return constraint.Check(v)
 }
 
+// Delta returns a comparison to the given version
+func (v *Version) Delta(b *Version) Delta {
+	return NewDelta(v, b)
+}
+
+// segmentEqual checks if the segments at the specified index are equal between two versions.
+func (v *Version) segmentEqual(b *Version, index int) bool {
+	if v == nil || b == nil || index < 0 || index >= maxSegments {
+		return false
+	}
+	return v.segments[index] == b.segments[index]
+}
+
+// Major returns a string like "v2" from a version like 2.0.0
+func (v *Version) Major() string {
+	return fmt.Sprintf("v%d", v.segments[0])
+}
+
+// Minor returns a string like "v2.3" from a version like 2.3.0
+func (v *Version) Minor() string {
+	return fmt.Sprintf("v%d.%d", v.segments[0], v.segments[1])
+}
+
+// Patch returns a string like "v2.3.4" from a version like 2.3.4-rc.1
+func (v *Version) Patch() string {
+	return fmt.Sprintf("v%d.%d.%d", v.segments[0], v.segments[1], v.segments[2])
+}
+
 // MustParse is like NewVersion but panics if the version cannot be parsed.
 // It simplifies safe initialization of global variables.
 func MustParse(v string) *Version {
