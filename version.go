@@ -409,7 +409,7 @@ func (v *Version) IsZero() bool {
 }
 
 // Satisfies returns true if the version satisfies the supplied constraint
-func (v *Version) Satisfies(constraint Constraints) bool {
+func (v *Version) Satisfies(constraint Constraint) bool {
 	return constraint.Check(v)
 }
 
