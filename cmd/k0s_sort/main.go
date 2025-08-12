@@ -61,7 +61,11 @@ func main() {
 				println("can't open file:", err.Error())
 				os.Exit(1)
 			}
-			defer file.Close()
+			defer func() {
+				if err := file.Close(); err != nil {
+					println("can't close file:", err.Error())
+				}
+			}()
 			files = append(files, file)
 		}
 		input = io.MultiReader(files...)
