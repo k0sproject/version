@@ -1,4 +1,6 @@
 # version
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fk0sproject%2Fversion.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fk0sproject%2Fversion?ref=badge_shield)
+
 
 A go-language package for parsing, comparing, sorting and constraint-checking [k0s](https://github.com/k0sproject/k0s) version numbers. The API is modeled after [hashicorp/go-version](https://github.com/hashicorp/go-version). 
 
@@ -126,3 +128,7 @@ Usage: k0s_sort [options] [filename ...]
   -s	omit prerelease versions
   -v	print k0s_sort version
 ```
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fk0sproject%2Fversion.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fk0sproject%2Fversion?ref=badge_large)
