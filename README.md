@@ -117,16 +117,63 @@ func main() {
 }
 ```
 
+### List released versions
+
+```go
+import (
+	"fmt"
+
+	"github.com/k0sproject/version"
+)
+
+func main() {
+	versions, err := version.All()
+	if err != nil {
+		panic(err)
+	}
+	for _, v := range versions {
+		fmt.Println(v)
+	}
+}
+```
+
+The first call hydrates a cache under the OS cache directory (honouring `XDG_CACHE_HOME` when set) and reuses it for subsequent listings.
+
+### Plan an upgrade path
+
+```go
+from := version.MustParse("v1.24.1+k0s.0")
+to := version.MustParse("v1.26.1+k0s.0")
+path, err := from.UpgradePath(to)
+if err != nil {
+	panic(err)
+}
+for _, step := range path {
+	fmt.Println(step)
+}
+```
+
+The resulting slice contains the latest patch of each intermediate minor and the target (including prereleases when the target is one).
+
 ### `k0s_sort` executable
 
-A command-line interface to the package. Can be used to sort lists of versions or to obtain the latest version number.
+A command-line interface to the package. It can sort version lists, fetch released tags from GitHub, and compute upgrade paths.
 
 ```console
 Usage: k0s_sort [options] [filename ...]
-  -l	only print the latest version
+  -a	list released versions from GitHub (stable only, honours cache)
+  -A	list released versions from GitHub including prereleases
+  -l	only print the latest version (works with input or together with -a/-A)
   -o	print the latest version from online
   -s	omit prerelease versions
+  -u	show upgrade path; requires FROM and TO versions (e.g. -u v1.24.0 v1.26.1)
   -v	print k0s_sort version
+
+Examples:
+  k0s_sort -a -l
+  k0s_sort -A -l
+  k0s_sort -u v1.24.0 v1.26.1
+  cat versions.txt | k0s_sort -s -l
 ```
 
 

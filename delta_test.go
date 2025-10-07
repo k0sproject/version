@@ -48,8 +48,8 @@ func ExampleDelta() {
 	a, _ := version.NewVersion("v1.0.0")
 	b, _ := version.NewVersion("v1.2.1")
 	delta := version.NewDelta(a, b)
-	fmt.Printf("patch upgrade: %t\n", delta.PatchUpgrade)
-	fmt.Println(delta.String())
+	_, _ = fmt.Printf("patch upgrade: %t\n", delta.PatchUpgrade)
+	_, _ = fmt.Println(delta.String())
 	// Output:
 	// patch upgrade: false
 	// a non-consecutive minor upgrade from v1.0 to v1.2
