@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 )
@@ -13,33 +14,83 @@ var Timeout = time.Second * 10
 
 // LatestByPrerelease returns the latest released k0s version, if preok is true, prereleases are also accepted.
 func LatestByPrerelease(allowpre bool) (*Version, error) {
-	u := &url.URL{
-		Scheme: "https",
-		Host:   "docs.k0sproject.io",
+	result, err := loadAll(false)
+	versions := result.versions
+	var candidate *Version
+	if err == nil {
+		candidate = selectLatest(versions, allowpre)
+		if candidate != nil && !result.usedFallback {
+			return candidate, nil
+		}
 	}
 
-	if allowpre {
-		u.Path = "latest.txt"
-	} else {
-		u.Path = "stable.txt"
+	fallback, fallbackErr := fetchLatestFromDocs(allowpre)
+	if fallbackErr == nil {
+		if candidate == nil {
+			return fallback, nil
+		}
+		if fallback.GreaterThan(candidate) {
+			return fallback, nil
+		}
+		return candidate, nil
 	}
 
-	v, err := httpGet(u.String())
+	if candidate != nil {
+		return candidate, nil
+	}
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("list versions: %w", err)
 	}
-
-	return NewVersion(v)
+	return nil, fallbackErr
 }
 
-// LatestStable returns the semantically sorted latest non-prerelease version from the online repository
+// LatestStable returns the semantically sorted latest non-prerelease version from the cached collection.
 func LatestStable() (*Version, error) {
 	return LatestByPrerelease(false)
 }
 
-// LatestVersion returns the semantically sorted latest version even if it is a prerelease from the online repository
+// LatestVersion returns the semantically sorted latest version even if it is a prerelease from the cached collection.
 func Latest() (*Version, error) {
 	return LatestByPrerelease(true)
+}
+
+func selectLatest(collection Collection, allowpre bool) *Version {
+	for i := len(collection) - 1; i >= 0; i-- {
+		v := collection[i]
+		if v == nil {
+			continue
+		}
+		if !allowpre && v.IsPrerelease() {
+			continue
+		}
+		return v
+	}
+	return nil
+}
+
+func fetchLatestFromDocs(allowpre bool) (*Version, error) {
+	path := "stable.txt"
+	if allowpre {
+		path = "latest.txt"
+	}
+
+	base := strings.TrimSpace(os.Getenv("K0S_VERSION_DOCS_BASE_URL"))
+	if base == "" {
+		base = "https://docs.k0sproject.io"
+	}
+
+	baseURL, err := url.Parse(base)
+	if err != nil {
+		return nil, fmt.Errorf("parse docs base url %q: %w", base, err)
+	}
+	baseURL.Path = path
+
+	text, err := httpGet(baseURL.String())
+	if err != nil {
+		return nil, err
+	}
+
+	return NewVersion(text)
 }
 
 func httpGet(u string) (string, error) {
@@ -51,22 +102,19 @@ func httpGet(u string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("http request to %s failed: %w", u, err)
 	}
+	defer resp.Body.Close()
 
 	if resp.Body == nil {
 		return "", fmt.Errorf("http request to %s failed: nil body", u)
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("http request to %s failed: backend returned %d", u, resp.StatusCode)
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("http request to %s failed: %w when reading body", u, err)
-	}
-
-	if err := resp.Body.Close(); err != nil {
-		return "", fmt.Errorf("http request to %s failed: %w when closing body", u, err)
 	}
 
 	return strings.TrimSpace(string(body)), nil

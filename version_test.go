@@ -68,6 +68,12 @@ func TestNewVersion(t *testing.T) {
 	Equal(t, "v1.23.3", v.Base())
 	_, err = version.NewVersion("v1.23.b+k0s.1")
 	Error(t, err)
+
+	t.Run("preserves metadata suffix", func(t *testing.T) {
+		candidate, err := version.NewVersion("v1.26.0+k0s.0-rc.1")
+		NoError(t, err)
+		Equal(t, "v1.26.0+k0s.0-rc.1", candidate.String())
+	})
 }
 
 func TestWithK0s(t *testing.T) {
