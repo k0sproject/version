@@ -8,13 +8,6 @@ import (
 	"net/url"
 	"os"
 	"strings"
-	"time"
-)
-
-var (
-	// Timeout controls the default HTTP client timeout for remote lookups.
-	Timeout          = 10 * time.Second
-	sharedHTTPClient = &http.Client{Timeout: Timeout}
 )
 
 // LatestByPrerelease returns the latest released k0s version. When allowpre is
@@ -26,7 +19,8 @@ func LatestByPrerelease(allowpre bool) (*Version, error) {
 // LatestByPrereleaseContext returns the latest released k0s version using the
 // provided context. When allowpre is true prereleases are also accepted.
 func LatestByPrereleaseContext(ctx context.Context, allowpre bool) (*Version, error) {
-	result, err := loadAll(ctx, sharedHTTPClient, false)
+	client := defaultHTTPClient()
+	result, err := loadAll(ctx, client, false)
 	versions := result.versions
 
 	var candidate *Version
@@ -37,7 +31,7 @@ func LatestByPrereleaseContext(ctx context.Context, allowpre bool) (*Version, er
 		}
 	}
 
-	fallback, fallbackErr := fetchLatestFromDocs(ctx, sharedHTTPClient, allowpre)
+	fallback, fallbackErr := fetchLatestFromDocs(ctx, docsHTTPClient(), allowpre)
 	if fallbackErr == nil {
 		if candidate == nil {
 			return fallback, nil
@@ -122,7 +116,7 @@ func fetchLatestFromDocs(ctx context.Context, client *http.Client, allowpre bool
 
 func httpGet(ctx context.Context, client *http.Client, u string) (string, error) {
 	if client == nil {
-		client = sharedHTTPClient
+		client = defaultHTTPClient()
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)

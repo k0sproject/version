@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/k0sproject/version/internal/httpclient"
 )
 
 const (
@@ -35,7 +37,7 @@ type Client struct {
 // the GITHUB_API_URL environment variable (useful for tests or GHES).
 func NewClient(httpClient *http.Client) *Client {
 	if httpClient == nil {
-		httpClient = &http.Client{Timeout: 10 * time.Second}
+		httpClient = httpclient.New(httpclient.DefaultTimeout)
 	}
 
 	base := os.Getenv("GITHUB_API_URL")

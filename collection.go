@@ -122,7 +122,7 @@ func (c Collection) writeCache() error {
 // modification time when the cache is older than CacheMaxAge. The cache is
 // skipped if the remote lookup fails and no cached data exists.
 func All(ctx context.Context) (Collection, error) {
-	result, err := loadAll(ctx, sharedHTTPClient, false)
+	result, err := loadAll(ctx, defaultHTTPClient(), false)
 	return result.versions, err
 }
 
@@ -134,7 +134,7 @@ func Refresh() (Collection, error) {
 // RefreshContext fetches versions from GitHub regardless of cache freshness,
 // updating the cache on success using the provided context.
 func RefreshContext(ctx context.Context) (Collection, error) {
-	result, err := loadAll(ctx, sharedHTTPClient, true)
+	result, err := loadAll(ctx, defaultHTTPClient(), true)
 	return result.versions, err
 }
 
