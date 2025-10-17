@@ -12,8 +12,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/k0sproject/version/internal/httpclient"
 )
 
 const (
@@ -23,6 +21,7 @@ const (
 	perPage         = 100
 	headerAccept    = "application/vnd.github+json"
 	headerUserAgent = "github.com/k0sproject/version"
+	defaultTimeout  = 10 * time.Second
 )
 
 // Client wraps GitHub REST usage tailored for listing tags.
@@ -36,18 +35,28 @@ type Client struct {
 // client with a 10s timeout is used. The base URL can be overridden via
 // the GITHUB_API_URL environment variable (useful for tests or GHES).
 func NewClient(httpClient *http.Client) *Client {
+	return NewClientWithBaseURL(httpClient, "")
+}
+
+// NewClientWithBaseURL creates a GitHub client that targets baseURL when it is
+// non-empty. When baseURL is empty the value is resolved from the environment
+// and ultimately falls back to the public api.github.com endpoint.
+func NewClientWithBaseURL(httpClient *http.Client, baseURL string) *Client {
 	if httpClient == nil {
-		httpClient = httpclient.New(httpclient.DefaultTimeout)
+		httpClient = newHTTPClient(defaultTimeout)
 	}
 
-	base := os.Getenv("GITHUB_API_URL")
-	if base == "" {
-		base = defaultBaseURL
+	resolved := strings.TrimSpace(baseURL)
+	if resolved == "" {
+		resolved = strings.TrimSpace(os.Getenv("GITHUB_API_URL"))
+	}
+	if resolved == "" {
+		resolved = defaultBaseURL
 	}
 
 	return &Client{
 		httpClient: httpClient,
-		baseURL:    strings.TrimRight(base, "/"),
+		baseURL:    strings.TrimRight(resolved, "/"),
 		token:      strings.TrimSpace(os.Getenv("GITHUB_TOKEN")),
 	}
 }
@@ -144,4 +153,15 @@ func hasNextPage(linkHeader string) bool {
 
 type tagResponse struct {
 	Name string `json:"name"`
+}
+
+func newHTTPClient(timeout time.Duration) *http.Client {
+	client := &http.Client{}
+	if timeout > 0 {
+		client.Timeout = timeout
+	}
+	if base, ok := http.DefaultTransport.(*http.Transport); ok && base != nil {
+		client.Transport = base.Clone()
+	}
+	return client
 }

@@ -122,7 +122,12 @@ func (c Collection) writeCache() error {
 // modification time when the cache is older than CacheMaxAge. The cache is
 // skipped if the remote lookup fails and no cached data exists.
 func All(ctx context.Context) (Collection, error) {
-	result, err := loadAll(ctx, defaultHTTPClient(), false)
+	client := httpClientFromContext(ctx, httpClientKeyGitHub, defaultHTTPClient)
+	ctxWithTimeout, cancel := withTargetTimeout(ctx, httpTimeoutKeyGitHub)
+	if cancel != nil {
+		defer cancel()
+	}
+	result, err := loadAll(ctxWithTimeout, client, false)
 	return result.versions, err
 }
 
@@ -134,7 +139,12 @@ func Refresh() (Collection, error) {
 // RefreshContext fetches versions from GitHub regardless of cache freshness,
 // updating the cache on success using the provided context.
 func RefreshContext(ctx context.Context) (Collection, error) {
-	result, err := loadAll(ctx, defaultHTTPClient(), true)
+	client := httpClientFromContext(ctx, httpClientKeyGitHub, defaultHTTPClient)
+	ctxWithTimeout, cancel := withTargetTimeout(ctx, httpTimeoutKeyGitHub)
+	if cancel != nil {
+		defer cancel()
+	}
+	result, err := loadAll(ctxWithTimeout, client, true)
 	return result.versions, err
 }
 
@@ -162,7 +172,7 @@ func loadAll(ctx context.Context, httpClient *http.Client, force bool) (loadResu
 		return loadResult{versions: collectionFromMap(known)}, nil
 	}
 
-	client := github.NewClient(httpClient)
+	client := github.NewClientWithBaseURL(httpClient, githubAPIURL())
 	tags, err := client.TagsSince(ctx, modTime)
 	if err != nil {
 		if force || len(known) == 0 {

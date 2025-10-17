@@ -1,6 +1,7 @@
 package version_test
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -19,9 +20,9 @@ func TestLatestByPrerelease(t *testing.T) {
 		if r.URL.Path == "/repos/k0sproject/k0s/tags" {
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = fmt.Fprint(w, `[
-	{"name":"v1.25.0+k0s.0"},
-	{"name":"v1.24.3+k0s.0"}
-	]`)
+    {"name":"v1.25.0+k0s.0"},
+    {"name":"v1.24.3+k0s.0"}
+    ]`)
 			return
 		}
 		http.NotFound(w, r)
@@ -63,4 +64,16 @@ func TestLatestByPrerelease(t *testing.T) {
 	latest, err := version.LatestByPrerelease(true)
 	NoError(t, err)
 	Equal(t, "v1.26.0+k0s.0-rc.1", latest.String())
+
+	ctxLatest, err := version.LatestByPrereleaseContext(context.Background(), true)
+	NoError(t, err)
+	Equal(t, latest.String(), ctxLatest.String())
+
+	defaultLatest, err := version.Latest()
+	NoError(t, err)
+	Equal(t, latest.String(), defaultLatest.String())
+
+	ctxDefaultLatest, err := version.LatestContext(context.Background())
+	NoError(t, err)
+	Equal(t, latest.String(), ctxDefaultLatest.String())
 }

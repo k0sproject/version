@@ -5,10 +5,19 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
-	"os"
 	"strings"
 )
+
+// Latest returns the latest released k0s version, including prereleases.
+func Latest() (*Version, error) {
+	return LatestByPrerelease(true)
+}
+
+// LatestContext returns the latest released k0s version using the provided
+// context, including prereleases.
+func LatestContext(ctx context.Context) (*Version, error) {
+	return LatestByPrereleaseContext(ctx, true)
+}
 
 // LatestByPrerelease returns the latest released k0s version. When allowpre is
 // true prereleases are also accepted.
@@ -19,8 +28,12 @@ func LatestByPrerelease(allowpre bool) (*Version, error) {
 // LatestByPrereleaseContext returns the latest released k0s version using the
 // provided context. When allowpre is true prereleases are also accepted.
 func LatestByPrereleaseContext(ctx context.Context, allowpre bool) (*Version, error) {
-	client := defaultHTTPClient()
-	result, err := loadAll(ctx, client, false)
+	client := httpClientFromContext(ctx, httpClientKeyGitHub, defaultHTTPClient)
+	ctxWithTimeout, cancel := withTargetTimeout(ctx, httpTimeoutKeyGitHub)
+	if cancel != nil {
+		defer cancel()
+	}
+	result, err := loadAll(ctxWithTimeout, client, false)
 	versions := result.versions
 
 	var candidate *Version
@@ -31,12 +44,14 @@ func LatestByPrereleaseContext(ctx context.Context, allowpre bool) (*Version, er
 		}
 	}
 
-	fallback, fallbackErr := fetchLatestFromDocs(ctx, docsHTTPClient(), allowpre)
+	docsClient := httpClientFromContext(ctx, httpClientKeyDocs, docsHTTPClient)
+	docsCtx, docsCancel := withTargetTimeout(ctx, httpTimeoutKeyDocs)
+	if docsCancel != nil {
+		defer docsCancel()
+	}
+	fallback, fallbackErr := fetchLatestFromDocs(docsCtx, docsClient, allowpre)
 	if fallbackErr == nil {
-		if candidate == nil {
-			return fallback, nil
-		}
-		if fallback.GreaterThan(candidate) {
+		if candidate == nil || fallback.GreaterThan(candidate) {
 			return fallback, nil
 		}
 		return candidate, nil
@@ -63,18 +78,6 @@ func LatestStableContext(ctx context.Context) (*Version, error) {
 	return LatestByPrereleaseContext(ctx, false)
 }
 
-// Latest returns the semantically sorted latest version even if it is a
-// prerelease from the cached collection.
-func Latest() (*Version, error) {
-	return LatestByPrerelease(true)
-}
-
-// LatestContext returns the semantically sorted latest version even if it is a
-// prerelease from the cached collection using the provided context.
-func LatestContext(ctx context.Context) (*Version, error) {
-	return LatestByPrereleaseContext(ctx, true)
-}
-
 func selectLatest(collection Collection, allowpre bool) *Version {
 	for i := len(collection) - 1; i >= 0; i-- {
 		v := collection[i]
@@ -90,23 +93,9 @@ func selectLatest(collection Collection, allowpre bool) *Version {
 }
 
 func fetchLatestFromDocs(ctx context.Context, client *http.Client, allowpre bool) (*Version, error) {
-	path := "stable.txt"
-	if allowpre {
-		path = "latest.txt"
-	}
+	target := docsURL(allowpre)
 
-	base := strings.TrimSpace(os.Getenv("K0S_VERSION_DOCS_BASE_URL"))
-	if base == "" {
-		base = "https://docs.k0sproject.io"
-	}
-
-	baseURL, err := url.Parse(base)
-	if err != nil {
-		return nil, fmt.Errorf("parse docs base url %q: %w", base, err)
-	}
-	baseURL.Path = path
-
-	text, err := httpGet(ctx, client, baseURL.String())
+	text, err := httpGet(ctx, client, target)
 	if err != nil {
 		return nil, err
 	}
