@@ -143,14 +143,24 @@ The first call hydrates a cache under the OS cache directory (honouring `XDG_CAC
 
 ### `k0s_sort` executable
 
-A command-line interface to the package. Can be used to sort lists of versions or to obtain the latest version number.
+A command-line interface to the package. It can sort version lists, fetch released tags from GitHub, and compute upgrade paths.
 
 ```console
 Usage: k0s_sort [options] [filename ...]
-  -l	only print the latest version
-  -o	print the latest version from online
+  -a	list released versions from GitHub (stable only, honours cache)
+  -A	list released versions from GitHub including prereleases
+  -d	print version delta instead of upgrade path output
+  -l	only print the latest version (works with input or together with -a/-A)
   -s	omit prerelease versions
+  -u	require up-to-date online data
   -v	print k0s_sort version
+
+Examples:
+  k0s_sort "v1.24.0...stable"
+  k0s_sort -d "v1.24.0...v1.26.1"
+  k0s_sort -a ">= v1.25.0"
+  k0s_sort -u -a -l
+  cat versions.txt | k0s_sort -s -l
 ```
 
 
