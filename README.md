@@ -117,6 +117,30 @@ func main() {
 }
 ```
 
+### List released versions
+
+```go
+import (
+	"context"
+	"fmt"
+
+	"github.com/k0sproject/version"
+)
+
+func main() {
+	ctx := context.Background()
+	versions, err := version.All(ctx)
+	if err != nil {
+		panic(err)
+	}
+	for _, v := range versions {
+		fmt.Println(v)
+	}
+}
+```
+
+The first call hydrates a cache under the OS cache directory (honouring `XDG_CACHE_HOME` when set) and reuses it for subsequent listings.
+
 ### `k0s_sort` executable
 
 A command-line interface to the package. Can be used to sort lists of versions or to obtain the latest version number.
