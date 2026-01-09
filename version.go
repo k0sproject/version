@@ -97,27 +97,52 @@ func NewVersion(v string) (*Version, error) {
 	if len(metaParts) == 1 {
 		version.meta = meta
 	} else {
-		// parse the k0s.<version> part from metadata
-		// and rebuild a new metadata string without it
-		var newMeta strings.Builder
-		for idx, part := range metaParts {
-			if part == k0s && idx < len(metaParts)-1 {
-				k0sV, err := strconv.ParseUint(metaParts[idx+1], 10, 32)
-				if err == nil {
-					version.isK0s = true
-					version.k0s = int(k0sV)
-				}
-			} else if idx > 0 && metaParts[idx-1] != k0s {
-				newMeta.WriteString(part)
-				if idx < len(metaParts)-1 {
-					newMeta.WriteString(".")
-				}
+		var filtered []string
+		for i := 0; i < len(metaParts); {
+			part := metaParts[i]
+			if part != k0s {
+				filtered = append(filtered, part)
+				i++
+				continue
 			}
+			if i+1 >= len(metaParts) {
+				filtered = append(filtered, part)
+				i++
+				continue
+			}
+			next := metaParts[i+1]
+			digits, suffix := splitLeadingDigits(next)
+			if digits == "" {
+				filtered = append(filtered, part)
+				i++
+				continue
+			}
+			k0sV, err := strconv.ParseUint(digits, 10, 32)
+			if err != nil {
+				filtered = append(filtered, part)
+				i++
+				continue
+			}
+			version.isK0s = true
+			version.k0s = int(k0sV)
+			if suffix != "" {
+				filtered = append(filtered, suffix)
+			}
+			i += 2
 		}
-		version.meta = newMeta.String()
+		version.meta = strings.Join(filtered, ".")
 	}
 
 	return version, nil
+}
+
+func splitLeadingDigits(s string) (string, string) {
+	for i, r := range s {
+		if r < '0' || r > '9' {
+			return s[:i], s[i:]
+		}
+	}
+	return s, ""
 }
 
 // Segments returns the numerical segments of the version. The returned slice is always maxSegments long. Missing segments are zeroes. Eg 1,1,0 from v1.1
@@ -221,10 +246,14 @@ func (v *Version) String() string {
 		sb.WriteRune('.')
 		sb.WriteString(strconv.Itoa(v.k0s))
 		if v.meta != "" {
-			sb.WriteRune('.')
+			if strings.HasPrefix(v.meta, "-") {
+				sb.WriteString(v.meta)
+			} else {
+				sb.WriteRune('.')
+				sb.WriteString(v.meta)
+			}
 		}
-	}
-	if v.meta != "" {
+	} else if v.meta != "" {
 		sb.WriteString(v.meta)
 	}
 
@@ -246,7 +275,7 @@ func (v *Version) Equal(b *Version) bool {
 func (v *Version) Compare(b *Version) int {
 	switch {
 	case v == nil && b == nil:
-		return 0 
+		return 0
 	case v == nil && b != nil:
 		return -1
 	case v != nil && b == nil:
